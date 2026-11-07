@@ -140,8 +140,8 @@ en:{num:'Container number', tagline:'Our spot, Zuidoost · prototype', tab_bin:'
  frac:{Rest:'Residual waste',Papier:'Paper & cardboard',Glas:'Glass',Textiel:'Textiles',GFT:'Food & garden waste',Grof:'Bulky waste point',Onbekend:'Type not listed'},
  neighbourhood:'Neighbourhood code', adopted:'Has a Spot Host', notadopted:'No Spot Host yet',
  fill:'How full is it?', space:'Space left: push the flap firmly', fullnow:'Full right now', demo_fill:'Demo value: live fill sensors not connected',
- tip:'Flap feels stuck? Push it all the way. Containers are full less than 4% of the time.',
- nearest:'Nearest other {f} container', away:'m away', go_there:'Show it',
+ tip:'Flap feels stuck? Push it all the way. When waste is left next to a container, the container is full in fewer than 4% of cases (Amsterdam, 2020).',
+ nearest:'Nearest other {f} container', nearest_x:{Grof:'Nearest other bulky waste point', Onbekend:'Nearest other container (type not listed)'}, away:'m away', go_there:'Show it',
  report:'Something wrong here?', r_block:'Flap is stuck', r_bags:'Bags next to it', r_bulky:'Furniture dumped', r_broken:'Damaged',
  reported:'Thanks. Your report is ready to send to the city’s Signalen system (demo: nothing is sent).',
  host_title:'Become this container’s Spot Host', host_text:'Hosts get a key to clear blockages, priority reporting, and help their block earn the Buurtbonus.',
@@ -150,16 +150,16 @@ en:{num:'Container number', tagline:'Our spot, Zuidoost · prototype', tab_bin:'
  bulky_title:'Get rid of something big', bulky_sub:'Book a free pickup in a few taps. In the pilot this runs on WhatsApp.',
  b_q1:'Hi! What do you want to get rid of?', b_items:['Sofa','Mattress','Cupboard','Fridge or washer','Big boxes','Something else'],
  b_q2:'Is it still usable?', yes:'Yes', no:'No',
- b_give:'Great. Post it on Geef door first: neighbours have 48 hours to pick it up. If nobody does, we collect it.', b_give_btn:'Post on Geef door', b_skip:'Just book the pickup',
+ b_give:'Great. Post it on Geef door first and keep it inside: a neighbour picks it up from you. If nobody does within 48 hours, book the free pickup here.', b_give_btn:'Post on Geef door', b_skip:'Just book the pickup',
  b_q3:'When should we collect it? Put it outside by 07:30 that morning.', b_q4:'Which street and house number?', b_addr_ph:'e.g. Bijlmerdreef 101', send:'Send',
  b_done:'Booked! Reference {r}. We collect your {i} on {d}. You get a reminder the evening before. (Demo: nothing is booked.)', restart:'Start again',
- give_title:'Geef door', give_sub:'Still usable? Give it to a neighbour instead of leaving it by the container. Unclaimed items are collected after 48 hours.',
- example:'Example', left:'h left', take:'I’ll take it', taken:'Reserved for you', post:'Post an item', what:'What is it?', where:'Pickup point (street)', post_btn:'Post for 48 hours', yours:'Your post',
+ give_title:'Geef door', give_sub:'Still usable? Give it to a neighbour. Keep it inside until they pick it up, never next to the container. Nobody within 48 hours? Book a free bulky pickup in the Bulky tab.',
+ example:'Example', left:'h left', take:'I’ll take it', taken:'Reserved for you', post:'Post an item', what:'What is it?', where:'Your street (item stays inside)', post_btn:'Post for 48 hours', yours:'Your post',
  spot_title:'My spot', spot_none:'You haven’t chosen your spot yet. Pick your container in the Bin tab and tap “Set as my spot”.',
  clean_days:'clean days in the last 30', cal_legend_ok:'Clean', cal_legend_bad:'Bags left outside',
  bonus:'Buurtbonus progress', bonus_text:'If your block’s spot is clean on 85% of days this quarter, the block earns a shared budget for something you choose.',
  vote:'What should the bonus pay for?', votes:'votes', voted:'Your vote is counted (demo).', opts:['Mural on the container wall','Fix the playground','Block party with food'],
- demo_spot:'Demo data: real clean-day scores would come from crew logs and image detection.',
+ demo_spot:'Demo data: real clean-day scores would come from crew logs and city inspections.',
  radar_title:'Hotspot Radar · Zuidoost', radar_sub:'City view for the ABP team. Containers and adoption are real open data; hotspot logs are not connected yet.',
  k_bins:'active containers', k_adopt:'have a Spot Host', k_city:'city average',
  by_district:'Share of containers with a volunteer adopter', avg_line:'dashed line = city average',
@@ -174,8 +174,8 @@ nl:{num:'Containernummer', tagline:'Onze plek, Zuidoost · prototype', tab_bin:'
  frac:{Rest:'Restafval',Papier:'Papier & karton',Glas:'Glas',Textiel:'Textiel',GFT:'Groente-, fruit- & etensresten',Grof:'Grofafvalplek',Onbekend:'Type onbekend'},
  neighbourhood:'Buurtcode', adopted:'Heeft een Plekhost', notadopted:'Nog geen Plekhost',
  fill:'Hoe vol is hij?', space:'Er is ruimte: duw de klep stevig door', fullnow:'Nu vol', demo_fill:'Demowaarde: vulgraadsensoren niet gekoppeld',
- tip:'Klep zit vast? Duw hem helemaal door. Containers zijn minder dan 4% van de tijd vol.',
- nearest:'Dichtstbijzijnde andere container voor {f}', away:'m verderop', go_there:'Toon',
+ tip:'Klep zit vast? Duw hem helemaal door. Als er afval naast een container staat, is die container in minder dan 4% van de gevallen vol (Amsterdam, 2020).',
+ nearest:'Dichtstbijzijnde andere container voor {f}', nearest_x:{Grof:'Dichtstbijzijnde andere grofafvalplek', Onbekend:'Dichtstbijzijnde andere container (type onbekend)'}, away:'m verderop', go_there:'Toon',
  report:'Klopt hier iets niet?', r_block:'Klep zit vast', r_bags:'Zakken ernaast', r_bulky:'Meubels gedumpt', r_broken:'Kapot',
  reported:'Dank je. Je melding staat klaar voor het Signalen-systeem van de gemeente (demo: er wordt niets verstuurd).',
  host_title:'Word Plekhost van deze container', host_text:'Hosts krijgen een sleutel om verstoppingen te verhelpen, meldingen met voorrang, en helpen hun blok de Buurtbonus te verdienen.',
@@ -184,16 +184,16 @@ nl:{num:'Containernummer', tagline:'Onze plek, Zuidoost · prototype', tab_bin:'
  bulky_title:'Iets groots kwijt?', bulky_sub:'Boek in een paar tikken een gratis ophaalafspraak. In de pilot gaat dit via WhatsApp.',
  b_q1:'Hoi! Wat wil je kwijt?', b_items:['Bank','Matras','Kast','Koelkast of wasmachine','Grote dozen','Iets anders'],
  b_q2:'Is het nog bruikbaar?', yes:'Ja', no:'Nee',
- b_give:'Top. Zet het eerst op Geef door: buren hebben 48 uur om het op te halen. Neemt niemand het, dan halen wij het op.', b_give_btn:'Zet op Geef door', b_skip:'Gewoon ophalen',
+ b_give:'Top. Zet het eerst op Geef door en houd het binnen: een buur haalt het bij je op. Neemt niemand het binnen 48 uur, boek dan hier de gratis ophaalafspraak.', b_give_btn:'Zet op Geef door', b_skip:'Gewoon ophalen',
  b_q3:'Wanneer halen we het op? Zet het die ochtend voor 07:30 buiten.', b_q4:'Welke straat en huisnummer?', b_addr_ph:'bijv. Bijlmerdreef 101', send:'Verstuur',
  b_done:'Geboekt! Kenmerk {r}. We halen je {i} op {d}. Je krijgt de avond ervoor een herinnering. (Demo: er is niets geboekt.)', restart:'Opnieuw',
- give_title:'Geef door', give_sub:'Nog bruikbaar? Geef het aan een buur in plaats van het bij de container te zetten. Na 48 uur halen wij het op.',
- example:'Voorbeeld', left:'u over', take:'Ik neem het', taken:'Voor jou gereserveerd', post:'Iets aanbieden', what:'Wat is het?', where:'Ophaalpunt (straat)', post_btn:'Plaats voor 48 uur', yours:'Jouw bericht',
+ give_title:'Geef door', give_sub:'Nog bruikbaar? Geef het aan een buur. Houd het binnen tot die het ophaalt, nooit naast de container. Na 48 uur niemand? Boek in het tabblad Grof een gratis ophaalafspraak.',
+ example:'Voorbeeld', left:'u over', take:'Ik neem het', taken:'Voor jou gereserveerd', post:'Iets aanbieden', what:'Wat is het?', where:'Je straat (het blijft binnen)', post_btn:'Plaats voor 48 uur', yours:'Jouw bericht',
  spot_title:'Mijn plek', spot_none:'Je hebt nog geen plek gekozen. Kies je container in het tabblad Bak en tik op “Maak dit mijn plek”.',
  clean_days:'schone dagen in de laatste 30', cal_legend_ok:'Schoon', cal_legend_bad:'Zakken buiten gezet',
  bonus:'Voortgang Buurtbonus', bonus_text:'Is de plek van je blok dit kwartaal op 85% van de dagen schoon, dan verdient het blok een gezamenlijk budget voor iets wat jullie kiezen.',
  vote:'Waar gaat de bonus naartoe?', votes:'stemmen', voted:'Je stem is geteld (demo).', opts:['Muurschildering bij de containers','Speeltuin opknappen','Buurtfeest met eten'],
- demo_spot:'Demodata: echte scores komen uit logboeken van de reiniging en beeldherkenning.',
+ demo_spot:'Demodata: echte scores komen uit logboeken van de reiniging en inspecties van de gemeente.',
  radar_title:'Hotspot Radar · Zuidoost', radar_sub:'Gemeenteweergave voor team ABP. Containers en adoptie zijn echte open data; hotspotlogboeken zijn nog niet gekoppeld.',
  k_bins:'actieve containers', k_adopt:'heeft een Plekhost', k_city:'stadsgemiddelde',
  by_district:'Aandeel containers met een adoptant', avg_line:'stippellijn = stadsgemiddelde',
@@ -262,8 +262,13 @@ function bindMap(onPick){
 }
 
 // ---------- state ----------
-let current = BINS.find(b=>b.id===store.get('last','')) || BINS.find(b=>b.f==='Rest' && !b.a) || BINS[0];
-let note = '';
+// Deep link (QR sticker on the lid): ?c=<container ID> opens that container in the Bin tab
+const normId = s => String(s||'').trim().toUpperCase().replace(/\s+/g,'');
+const DEEP = normId(new URLSearchParams(location.search).get('c'));
+const DEEP_BIN = DEEP ? BINS.find(b=>normId(b.id)===DEEP) : null;
+let current = DEEP_BIN || BINS.find(b=>b.id===store.get('last','')) || BINS.find(b=>b.f==='Rest' && !b.a) || BINS[0];
+let note = DEEP && !DEEP_BIN ? 'nf' : '';
+if(DEEP && location.hash && location.hash!=='#bin') history.replaceState(null, '', location.pathname+location.search+'#bin');
 
 // ---------- views ----------
 function viewBin(){
@@ -279,7 +284,7 @@ function viewBin(){
       <button class="btn ghost" type="button" id="rand">${t('random')}</button>
     </form>
     <datalist id="ids">${BINS.map(x=>`<option value="${esc(x.id)}">`).join('')}</datalist>
-    <p id="nf" class="muted" hidden>${t('notfound')}</p>
+    <p id="nf" class="muted" ${note==='nf'?'':'hidden'}>${t('notfound')}</p>
     ${mapSVG('plain', b, full && nn ? nn.bin : null)}
     <p class="muted" style="font-size:13px">${t('map_hint')}</p>
   </section>
@@ -298,7 +303,7 @@ function viewBin(){
       <p style="font-weight:700;color:${full?'var(--no)':'var(--yes)'}">${full?t('fullnow'):t('space')} (${lvl}%)</p>
     </div>
     <div class="tip"><svg viewBox="0 0 40 40" fill="none" stroke="var(--yes)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="14" width="28" height="20" rx="3"/><path d="M10 14l4-6h12l4 6M20 4v8M16 8l4 4 4-4"/></svg><p>${t('tip')}</p></div>
-    ${nn?`<div class="row" style="justify-content:space-between"><p>${t('nearest').replace('{f}',esc(fname.toLowerCase()))}: <b>${nn.d} ${t('away')}</b></p><button class="btn ghost" type="button" data-go="${esc(nn.bin.id)}">${t('go_there')}</button></div>`:''}
+    ${nn?`<div class="row" style="justify-content:space-between"><p>${t('nearest_x')[b.f]||t('nearest').replace('{f}',esc(fname.toLowerCase()))}: <b>${nn.d} ${t('away')}</b></p><button class="btn ghost" type="button" data-go="${esc(nn.bin.id)}">${t('go_there')}</button></div>`:''}
   </section>
   <section class="card">
     <h3>${t('report')}</h3>
