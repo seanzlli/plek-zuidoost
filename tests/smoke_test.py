@@ -121,8 +121,13 @@ def main():
         settle(page)
         html = page.content()
         for bad in ["Containers are full less than", "minder dan 4% van de tijd", "image detection", "beeldherkenning",
-                    "Pickup point (street)", "Ophaalpunt (straat)", "Unclaimed items are collected"]:
+                    "Pickup point (street)", "Ophaalpunt (straat)", "Unclaimed items are collected", "[local partner]", "[lokale partner]",
+                    "85% of days", "85% van de dagen", "Fix the playground", "Speeltuin opknappen"]:
             check(bad not in html and (text is None or bad not in text), f"old copy gone: {bad!r}")
+        for good in ["the container is full in fewer than 4% of cases", "is die container in minder dan 4% van de gevallen vol",
+                     "Keep it inside until they pick it up, never next to the container", "Houd het binnen tot die het ophaalt", "crew logs and city inspections",
+                     "inspecties van de gemeente"]:
+            check(good in html, f"fix is in the page: {good!r}")
         ctx.close()
 
         # 3. Bulky flow: Geef door hint, and pickup dates start after the 48 h window for usable items
@@ -278,6 +283,41 @@ def main():
               "own Geef door post older than 48 h offers the free pickup")
         check(page.evaluate("!!document.querySelector('link[rel=icon]')"), "favicon present")
         ctx.close()
+
+        # 7. My spot: Buurtbonus measured against the spot's own start, new vote options, counts labelled demo
+        BONUS = {
+            "en": ("Beat your own start: if your spot reaches its goal compared to its first 4 weeks, the block earns a reward you choose together, sponsored by local partners and the city.",
+                   "24 of 26 clean days · goal based on your own start",
+                   ["Mural near the spot with a local artist", "Plants on the container plate", "Pizza night or block BBQ"], "10 votes"),
+            "nl": ("Versla je eigen start: haalt jullie plek het doel ten opzichte van de eerste 4 weken, dan verdient het blok een beloning die jullie samen kiezen, gesponsord door lokale partners en de gemeente.",
+                   "24 van 26 schone dagen · doel op basis van jullie eigen start",
+                   ["Muurschildering bij de plek met een lokale kunstenaar", "Planten op de containerplaat", "Pizza-avond of blok-BBQ"], "10 stemmen"),
+        }
+        for lang in LANGS:
+            text_, label, opts, after = BONUS[lang]
+            ctx, page, errs = new_page(browser, lang, {"plek_spot": json.dumps("RET20507")})
+            page.goto(base + "#spot")
+            settle(page)
+            view = page.inner_text("#view")
+            check(text_ in view, f"{lang}/spot: new Buurtbonus text")
+            got = page.inner_text(".progress + p").strip()
+            check(got == label, f"{lang}/spot: progress label {got!r}")
+            check(page.get_attribute(".progress", "aria-valuenow") == "92" and "85%" not in view and "80%" not in view,
+                  f"{lang}/spot: bar at 24/26 = 92%, no 80%/85% left")
+            check(view.count(" / 30") == 1 and "24" in page.inner_text(".card h2 span"), f"{lang}/spot: same 24 clean days as the calendar")
+            names = [page.inner_text(f"[data-vote='{i}'] span:first-child") for i in range(3)]
+            counts_one_line = page.evaluate("[...document.querySelectorAll('[data-vote] span:last-child')].every(e=>e.getClientRects().length===1)")
+            check(counts_one_line, f"{lang}/spot: vote counts stay on one line")
+            check(names == opts, f"{lang}/spot: vote options {names}")
+            check(page.locator("section.card:has([data-vote]) .pill.demo").count() == 1, f"{lang}/spot: vote counts labelled Demo")
+            page.click("[data-vote='1']")
+            check(after in page.inner_text("[data-vote='1']") and page.get_attribute("[data-vote='1']", "aria-pressed") == "true"
+                  and page.is_visible("#view .toast"), f"{lang}/spot: voting adds one ({after}) and confirms")
+            o = page.evaluate(OVERFLOW_JS)
+            check(o["doc"] <= o["W"] and not o["offenders"], f"{lang}/spot after voting: no horizontal overflow {o['offenders'][:3]}")
+            shoot(page, f"{lang}_spot_bonus_voted", full=True)
+            check(not errs, f"{lang}/spot: no console errors {errs}")
+            ctx.close()
 
         browser.close()
 

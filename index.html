@@ -190,8 +190,8 @@ en:{num:'Container number', tagline:'Our spot · Zuidoost · prototype', tab_bin
  example:'Example', book_pickup:'48 h passed: book the free pickup', left:'h left', take:'I’ll take it', taken:'Reserved for you', post:'Post an item', what:'What is it?', where:'Your street (item stays inside)', post_btn:'Post for 48 hours', yours:'Your post',
  spot_title:'My spot', spot_none:'You haven’t chosen your spot yet. Pick your container in the Bin tab and tap “Set as my spot”.',
  clean_days:'clean days in the last 30', cal_legend_ok:'Clean', cal_legend_bad:'Bags left outside',
- bonus:'Buurtbonus progress', bonus_text:'If your block’s spot is clean on 85% of days this quarter, the block earns a shared budget for something you choose.',
- vote:'What should the bonus pay for?', votes:'votes', voted:'Your vote is counted (demo).', opts:['Mural on the container wall','Fix the playground','Block party with food'],
+ bonus:'Buurtbonus progress', bonus_text:'Beat your own start: if your spot reaches its goal compared to its first 4 weeks, the block earns a reward you choose together, sponsored by local partners and the city.', bonus_of:'of', bonus_goal:'clean days · goal based on your own start',
+ vote:'What should the bonus pay for?', votes:'votes', voted:'Your vote is counted (demo).', opts:['Mural near the spot with a local artist','Plants on the container plate','Pizza night or block BBQ'],
  demo_spot:'Demo data: real clean-day scores would come from crew logs and city inspections.',
  radar_title:'Hotspot Radar · Zuidoost', radar_sub:'City view for the ABP team. Containers and adoption are real open data; hotspot logs are not connected yet.',
  k_bins:'active containers', k_adopt:'have a Spot Host', k_city:'city average',
@@ -227,8 +227,8 @@ nl:{num:'Containernummer', tagline:'Zuidoost · prototype', tab_bin:'Bak', tab_b
  example:'Voorbeeld', book_pickup:'48 uur voorbij: boek gratis ophalen', left:'u over', take:'Ik neem het', taken:'Voor jou gereserveerd', post:'Iets aanbieden', what:'Wat is het?', where:'Je straat (het blijft binnen)', post_btn:'Plaats voor 48 uur', yours:'Jouw bericht',
  spot_title:'Mijn plek', spot_none:'Je hebt nog geen plek gekozen. Kies je container in het tabblad Bak en tik op “Maak dit mijn plek”.',
  clean_days:'schone dagen in de laatste 30', cal_legend_ok:'Schoon', cal_legend_bad:'Zakken buiten gezet',
- bonus:'Voortgang Buurtbonus', bonus_text:'Is de plek van je blok dit kwartaal op 85% van de dagen schoon, dan verdient het blok een gezamenlijk budget voor iets wat jullie kiezen.',
- vote:'Waar gaat de bonus naartoe?', votes:'stemmen', voted:'Je stem is geteld (demo).', opts:['Muurschildering bij de containers','Speeltuin opknappen','Buurtfeest met eten'],
+ bonus:'Voortgang Buurtbonus', bonus_text:'Versla je eigen start: haalt jullie plek het doel ten opzichte van de eerste 4 weken, dan verdient het blok een beloning die jullie samen kiezen, gesponsord door lokale partners en de gemeente.', bonus_of:'van', bonus_goal:'schone dagen · doel op basis van jullie eigen start',
+ vote:'Waar gaat de bonus naartoe?', votes:'stemmen', voted:'Je stem is geteld (demo).', opts:['Muurschildering bij de plek met een lokale kunstenaar','Planten op de containerplaat','Pizza-avond of blok-BBQ'],
  demo_spot:'Demodata: echte scores komen uit logboeken van de reiniging en inspecties van de gemeente.',
  radar_title:'Hotspot Radar · Zuidoost', radar_sub:'Gemeenteweergave voor team ABP. Containers en adoptie zijn echte open data; hotspotlogboeken zijn nog niet gekoppeld.',
  k_bins:'actieve containers', k_adopt:'heeft een Plekhost', k_city:'stadsgemiddelde',
@@ -497,7 +497,9 @@ function viewSpot(){
   const id=store.get('spot',null); const b=BINS.find(x=>x.id===id);
   if(!b) return `<section class="card"><h1>${t('spot_title')}</h1><p>${t('spot_none')}</p><a class="btn" href="#bin" style="text-decoration:none;align-self:flex-start">${t('tab_bin')}</a></section>`;
   const h=hash(b.id); const days=[...Array(30)].map((_,i)=>((h>>(i%28))&7)===0); // demo pattern
-  const clean=days.filter(x=>!x).length; const pct=Math.round(clean/30*100);
+  const clean=days.filter(x=>!x).length;
+  // Buurtbonus (demo): goal set against the spot's own first 4 weeks, closing 60% of the gap to 30 clean days
+  const start=Math.max(6, clean-3-h%6), goal=Math.min(30, start+Math.round((30-start)*.6)), pct=Math.min(100, Math.round(clean/goal*100));
   const votes=store.get('vote',null); const base=[14,9,11];
   return `<section class="card"><h1>${t('spot_title')}</h1>
     <div class="bin-head"><div class="pict" style="color:var(--ink)">${ICON[b.f]||ICON.Onbekend}</div>
@@ -507,10 +509,10 @@ function viewSpot(){
     <div class="cal" role="img" aria-label="${clean} ${t('clean_days')}">${days.map(bad=>`<i class="${bad?'bad':''}"></i>`).join('')}</div>
     <div class="legend"><span><i class="dot" style="background:var(--yes)"></i>${t('cal_legend_ok')}</span><span><i class="dot" style="background:var(--no)"></i>${t('cal_legend_bad')}</span></div></section>
   <section class="card"><h3>${t('bonus')}</h3><p class="muted">${t('bonus_text')}</p>
-    <div class="progress" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><i style="width:${Math.min(100,pct/85*100)}%"></i></div>
-    <p><b>${pct}%</b> / 85%</p></section>
-  <section class="card"><h3>${t('vote')}</h3>
-    ${t('opts').map((o,i)=>`<button class="chip" type="button" data-vote="${i}" aria-pressed="${votes===i}" style="justify-content:space-between;display:flex;border-radius:12px;text-align:left"><span>${o}</span><span>${base[i]+(votes===i?1:0)} ${t('votes')}</span></button>`).join('')}
+    <div class="progress" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><i style="width:${pct}%"></i></div>
+    <p><b>${clean>=goal?'✓ ':''}${Math.min(clean,goal)} ${t('bonus_of')} ${goal}</b> ${t('bonus_goal')}</p></section>
+  <section class="card"><div class="row" style="justify-content:space-between"><h3>${t('vote')}</h3><span class="pill demo">Demo</span></div>
+    ${t('opts').map((o,i)=>`<button class="chip" type="button" data-vote="${i}" aria-pressed="${votes===i}" style="justify-content:space-between;align-items:center;gap:12px;display:flex;border-radius:12px;text-align:left"><span>${o}</span><span style="white-space:nowrap">${base[i]+(votes===i?1:0)} ${t('votes')}</span></button>`).join('')}
     ${votes!==null?`<p class="toast">${t('voted')}</p>`:''}
     <p class="muted" style="font-size:13px">${t('demo_spot')}</p></section>`;
 }
