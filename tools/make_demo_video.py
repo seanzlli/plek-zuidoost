@@ -47,7 +47,7 @@ TRY = {"en": ("Try it yourself", "Scan to open this container"), "nl": ("Probeer
 BRAND_SUB = {"en": "Live demo · prototype", "nl": "Live demo · prototype"}
 STEP_AT = [0.0, 2.7, 7.3, 11.3, 17.4]
 SHEET = [round(x * FPS) for x in (1.0, 2.0, 2.6, 5.0, 8.4, 10.0, 12.2, 14.0, 16.0, 19.0, 21.5, 25.0)]
-VOTE_FOR = 1   # "Fix the playground"
+VOTE_FOR = 1   # "Plants on the container plate"
 
 
 def ease(x):
