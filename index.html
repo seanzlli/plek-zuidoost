@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Plek app prototype</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23C8102E'/%3E%3Cg transform='translate(4 4)' fill='none' stroke='%23fff' stroke-width='2.4' stroke-linecap='round'%3E%3Cpath d='M5 8h14l-1.5 12h-11z'/%3E%3Cpath d='M8 8V5h8v3'/%3E%3C/g%3E%3C/svg%3E">
+<meta name="theme-color" content="#FFFDF8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#22212A" media="(prefers-color-scheme: dark)">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" integrity="sha512-h9FcoyWjHcOcmEVkxOfTLnmZFWIH0iZhZT1H2TbOq55xssQGEJHEaIm+PgoUaZbRvQTNTluNOEfb1ZRy6D3BOw==" crossorigin="anonymous" referrerpolicy="no-referrer">
@@ -27,7 +30,7 @@
 *{box-sizing:border-box}
 html,body{height:100%;margin:0}
 body{background:var(--bg);color:var(--ink);font:16px/1.45 var(--body);display:flex;justify-content:center}
-.app{width:100%;max-width:560px;height:100%;display:flex;flex-direction:column;background:var(--bg)}
+.app{width:100%;max-width:560px;height:100%;height:100dvh;display:flex;flex-direction:column;background:var(--bg)}
 header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line);background:var(--surface)}
 .brand{display:flex;align-items:center;gap:12px}
 .brand b{font:800 22px/1 var(--display);letter-spacing:-.3px}
@@ -47,7 +50,7 @@ h2{font-size:19px}
 h3{font-size:16px}
 p{margin:0}
 .muted{color:var(--muted)}
-.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:12px}
+.card{scroll-margin-top:16px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:12px}
 .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .btn{border:1px solid var(--ink);background:var(--ink);color:var(--bg);font:600 15px var(--body);padding:12px 16px;border-radius:12px;cursor:pointer}
 .btn.ghost{background:transparent;color:var(--ink)}
@@ -150,6 +153,13 @@ const store = {
   get(k, d){ try { const v = localStorage.getItem('plek_'+k); return v ? JSON.parse(v) : d; } catch(e){ return d; } },
   set(k, v){ try { localStorage.setItem('plek_'+k, JSON.stringify(v)); } catch(e){} }
 };
+// Demo helpers: ?reset clears everything this app saved on the device (reservations, posts, vote, spot,
+// last container, language); ?lang=nl or ?lang=en picks the language. Both are removed from the URL afterwards.
+const QS = new URLSearchParams(location.search);
+if(QS.has('reset')){ try{ Object.keys(localStorage).filter(k=>k.startsWith('plek_')).forEach(k=>localStorage.removeItem(k)); }catch(e){} QS.delete('reset'); }
+if(['en','nl'].includes(QS.get('lang'))){ store.set('lang', QS.get('lang')); }
+QS.delete('lang');
+if(QS.toString()!==location.search.replace(/^\?/,'')) history.replaceState(null, '', location.pathname+(QS.toString()?'?'+QS:'')+location.hash);
 let lang = store.get('lang', 'en');
 
 const T = {
@@ -177,7 +187,7 @@ en:{num:'Container number', tagline:'Our spot, Zuidoost · prototype', tab_bin:'
  b_q3:'When should we collect it? Put it outside by 07:30 that morning.', b_q3_give:'Pick a backup day after the 48 hours. If a neighbour takes it first, just cancel. Put it outside by 07:30 that morning.', b_q4:'Which street and house number?', b_addr_ph:'e.g. Bijlmerdreef 101', send:'Send',
  b_done:'Booked! Reference {r}. We collect your {i} on {d}. You get a reminder the evening before. (Demo: nothing is booked.)', restart:'Start again',
  give_title:'Geef door', give_sub:'Still usable? Give it to a neighbour. Keep it inside until they pick it up, never next to the container. Nobody within 48 hours? Book a free bulky pickup in the Bulky tab.',
- example:'Example', left:'h left', take:'I’ll take it', taken:'Reserved for you', post:'Post an item', what:'What is it?', where:'Your street (item stays inside)', post_btn:'Post for 48 hours', yours:'Your post',
+ example:'Example', book_pickup:'48 h passed: book the free pickup', left:'h left', take:'I’ll take it', taken:'Reserved for you', post:'Post an item', what:'What is it?', where:'Your street (item stays inside)', post_btn:'Post for 48 hours', yours:'Your post',
  spot_title:'My spot', spot_none:'You haven’t chosen your spot yet. Pick your container in the Bin tab and tap “Set as my spot”.',
  clean_days:'clean days in the last 30', cal_legend_ok:'Clean', cal_legend_bad:'Bags left outside',
  bonus:'Buurtbonus progress', bonus_text:'If your block’s spot is clean on 85% of days this quarter, the block earns a shared budget for something you choose.',
@@ -214,7 +224,7 @@ nl:{num:'Containernummer', tagline:'Onze plek, Zuidoost · prototype', tab_bin:'
  b_q3:'Wanneer halen we het op? Zet het die ochtend voor 07:30 buiten.', b_q3_give:'Kies alvast een reservedag na de 48 uur. Neemt een buur het eerder mee, dan annuleer je gewoon. Zet het die ochtend voor 07:30 buiten.', b_q4:'Welke straat en huisnummer?', b_addr_ph:'bijv. Bijlmerdreef 101', send:'Verstuur',
  b_done:'Geboekt! Kenmerk {r}. We halen je {i} op {d}. Je krijgt de avond ervoor een herinnering. (Demo: er is niets geboekt.)', restart:'Opnieuw',
  give_title:'Geef door', give_sub:'Nog bruikbaar? Geef het aan een buur. Houd het binnen tot die het ophaalt, nooit naast de container. Na 48 uur niemand? Boek in het tabblad Grof een gratis ophaalafspraak.',
- example:'Voorbeeld', left:'u over', take:'Ik neem het', taken:'Voor jou gereserveerd', post:'Iets aanbieden', what:'Wat is het?', where:'Je straat (het blijft binnen)', post_btn:'Plaats voor 48 uur', yours:'Jouw bericht',
+ example:'Voorbeeld', book_pickup:'48 uur voorbij: boek gratis ophalen', left:'u over', take:'Ik neem het', taken:'Voor jou gereserveerd', post:'Iets aanbieden', what:'Wat is het?', where:'Je straat (het blijft binnen)', post_btn:'Plaats voor 48 uur', yours:'Jouw bericht',
  spot_title:'Mijn plek', spot_none:'Je hebt nog geen plek gekozen. Kies je container in het tabblad Bak en tik op “Maak dit mijn plek”.',
  clean_days:'schone dagen in de laatste 30', cal_legend_ok:'Schoon', cal_legend_bad:'Zakken buiten gezet',
  bonus:'Voortgang Buurtbonus', bonus_text:'Is de plek van je blok dit kwartaal op 85% van de dagen schoon, dan verdient het blok een gezamenlijk budget voor iets wat jullie kiezen.',
@@ -229,6 +239,7 @@ nl:{num:'Containernummer', tagline:'Onze plek, Zuidoost · prototype', tab_bin:'
  mix:'Soorten containers', abp:'ABP-hotspotlaag: wacht op data-export van de gemeente', fill_layer:'Vulgraadsensoren: niet gekoppeld', data_note:'Bron: gemeente Amsterdam, huishoudelijk afval containers (WFS), gedownload 7 nov 2026.'}
 };
 const t = k => T[lang][k];
+const num = (v,d) => v.toLocaleString(lang==='nl'?'nl-NL':'en-GB',{minimumFractionDigits:d, maximumFractionDigits:d});
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 // ---------- pictograms ----------
@@ -298,7 +309,7 @@ function lmapMount(onPick){
   if(!LM.el){ LM.el=document.createElement('div'); LM.el.className='lmap'; LM.el.setAttribute('aria-label','Map of Zuidoost containers'); }
   slot.replaceWith(LM.el);
   if(LM.map){ LM.map.invalidateSize(); return false; }
-  LM.map=L.map(LM.el,{scrollWheelZoom:false, maxZoom:19}).fitBounds(allBounds(),{padding:[8,8]}); // a view must exist before markers are drawn
+  LM.map=L.map(LM.el,{scrollWheelZoom:false, dragging:!L.Browser.mobile, maxZoom:19}).fitBounds(allBounds(),{padding:[8,8]}); // a view must exist before markers are drawn
   LM.map.attributionControl.setPrefix('<a href="https://leafletjs.com">Leaflet</a>');
   L.tileLayer(PDOK,{maxZoom:19, attribution:'Kaart © <a href="https://www.kadaster.nl">Kadaster</a> (PDOK)'}).addTo(LM.map);
   const dotR=z=>z<=12?2:z<=13?2.5:z<=14?3:z<=15?3.5:4.5; // keep 1,206 dots readable at every zoom
@@ -374,7 +385,7 @@ function viewBin(){
     ${window.L?`<div class="row"><button class="btn ghost icon" type="button" id="locate" ${loc.st==='wait'?'disabled':''}>${TAB_ICON.spot}${t(loc.st==='wait'?'loc_wait':'locate')}</button><span class="muted" style="font-size:13px">${t('loc_private')}</span></div>${locNote()}<div id="mapslot"></div>`:mapSVG('plain', b, full && nn ? nn.bin : null)}
     <p class="muted" style="font-size:13px">${t('map_hint')}</p>
   </section>
-  <section class="card">
+  <section class="card" id="bincard">
     <div class="bin-head">
       <div class="pict" style="color:var(--ink)">${ICON[b.f]||ICON.Onbekend}</div>
       <div style="display:flex;flex-direction:column;gap:8px">
@@ -460,7 +471,7 @@ function viewGive(){
     const title=p.ex?(lang==='nl'?p.nl:p.en):p.title;
     return `<div class="item"><div class="pict" style="color:var(--ink)">${ICON[p.k]||ICON.Onbekend}</div>
       <div style="flex:1;display:flex;flex-direction:column;gap:4px"><b>${esc(title)}</b>
-      <span class="muted" style="font-size:14px">${esc(p.where)} · ${h} ${t('left')} ${p.ex?`· <span class="pill demo">${t('example')}</span>`:`· <span class="pill yes">${t('yours')}</span>`}</span></div>
+      <span class="muted" style="font-size:14px">${esc(p.where)} · ${p.mine&&h===0?`<a class="pill no" href="#bulky">${t('book_pickup')}</a>`:`${h} ${t('left')}`} ${p.ex?`· <span class="pill demo">${t('example')}</span>`:`· <span class="pill yes">${t('yours')}</span>`}</span></div>
       ${p.mine?'':(taken.includes(key)?`<span class="pill yes">✓ ${t('taken')}</span>`:`<button class="btn ghost" type="button" data-take="${key}">${t('take')}</button>`)}</div>`; };
   return `<section class="card"><h1>${t('give_title')}</h1><p class="muted">${t('give_sub')}</p></section>
   <section class="card">${items.map(row).join('')}</section>
@@ -518,13 +529,13 @@ function viewRadar(){
   return `<section class="card"><h1>${t('radar_title')}</h1><p class="muted">${t('radar_sub')}</p>
     <div class="kpis">
       <div class="kpi"><b>${n.toLocaleString(lang==='nl'?'nl-NL':'en-GB')}</b><span>${t('k_bins')}</span></div>
-      <div class="kpi"><b style="color:var(--accent)">${(ad/n*100).toFixed(1)}%</b><span>${t('k_adopt')}</span></div>
-      <div class="kpi"><b>${city.toFixed(1)}%</b><span>${t('k_city')}</span></div>
+      <div class="kpi"><b style="color:var(--accent)">${num(ad/n*100,1)}%</b><span>${t('k_adopt')}</span></div>
+      <div class="kpi"><b>${num(city,1)}%</b><span>${t('k_city')}</span></div>
     </div>
     <div class="row"><span class="pill no">${t('abp')}</span><span class="pill demo">${t('fill_layer')}</span></div></section>
   <section class="card"><h3>${t('by_district')}</h3>
-    <div class="bars">${dist.map(([k,v])=>`<div class="bar ${k==='Zuidoost'?'hl':''}"><span>${k}</span><div class="track"><div class="fill" style="width:${v/max*100}%"></div><div class="avg" style="left:${city/max*100}%"></div></div><span>${v.toFixed(1)}%</span></div>`).join('')}</div>
-    <p class="muted" style="font-size:13px">${t('avg_line')} (${city.toFixed(1)}%)</p></section>
+    <div class="bars">${dist.map(([k,v])=>`<div class="bar ${k==='Zuidoost'?'hl':''}"><span>${k}</span><div class="track"><div class="fill" style="width:${v/max*100}%"></div><div class="avg" style="left:${city/max*100}%"></div></div><span>${num(v,1)}%</span></div>`).join('')}</div>
+    <p class="muted" style="font-size:13px">${t('avg_line')} (${num(city,1)}%)</p></section>
   <section class="card"><h3>${t('map_adopt')}</h3>${mapSVG('adopt')}
     <div class="legend"><span><i class="dot" style="background:var(--yes)"></i>${t('leg_yes')} (${ad})</span><span><i class="dot" style="background:var(--no)"></i>${t('leg_no')} (${n-ad})</span></div></section>
   <section class="card"><h3>${t('low_title')}</h3><p class="muted" style="font-size:14px">${t('low_sub')}</p>
@@ -551,6 +562,7 @@ window.addEventListener('hashchange',()=>{ note=''; render(); document.getElemen
 document.getElementById('lang-nl').addEventListener('click',()=>{ lang='nl'; store.set('lang',lang); render(); });
 document.getElementById('lang-en').addEventListener('click',()=>{ lang='en'; store.set('lang',lang); render(); });
 render();
+if(DEEP_BIN && route()==='bin') document.getElementById('bincard').scrollIntoView({block:'start'});
 </script>
 </body>
 </html>

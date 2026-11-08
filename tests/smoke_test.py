@@ -1,10 +1,10 @@
 """Smoke test for Onze Plek (index.html) at phone size.
 
-Usage:  python3 tests/smoke_test.py [base_url]
+Usage:  python3 tests/smoke_test.py [base_url]      (ENGINE=webkit for Safari's engine)
 Without base_url it serves the repo folder on a local port.
 Writes screenshots to ./screenshots and exits non-zero on any failure.
 """
-import functools, http.server, json, sys, threading
+import functools, http.server, json, os, sys, threading
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 
@@ -86,7 +86,8 @@ def main():
         base += "/"
     print("Testing", base)
     with sync_playwright() as p:
-        browser = p.chromium.launch()
+        browser = getattr(p, os.environ.get("ENGINE", "chromium")).launch()
+        print("Engine:", os.environ.get("ENGINE", "chromium"))
 
         # 1. Every tab, both languages, light + dark: screenshots + overflow + console
         for scheme, lang in [("light", "en"), ("light", "nl"), ("dark", "en"), ("dark", "nl")]:
@@ -229,6 +230,42 @@ def main():
         check(page.is_visible("#nf") and page.get_attribute("nav a[aria-current=page]", "href") == "#bin",
               "unknown ?c=NOPE123: Bin tab with 'not found' message")
         check(not errs, f"unknown ?c: no console errors {errs}")
+        ctx.close()
+
+        # 6. Demo helpers and polish
+        ctx, page, errs = new_page(browser, "nl", {"plek_taken": json.dumps(["ex0"]), "plek_spot": json.dumps("RET20507"), "plek_vote": "1"})
+        page.goto(base + "?c=RET20507&reset")
+        settle(page)
+        left = page.evaluate("Object.keys(localStorage).filter(k=>k.startsWith('plek_'))")
+        check(left == [] and page.evaluate("location.search") == "?c=RET20507" and page.evaluate("document.documentElement.lang") == "en",
+              f"?reset clears saved demo state (left {left}), keeps ?c, back to English")
+        page.evaluate("location.hash='#give'"); page.wait_for_timeout(300)
+        check(page.locator("[data-take]").count() == 3, "after ?reset all three Geef door examples can be taken again")
+        check(not errs, f"?reset: no console errors {errs}")
+        ctx.close()
+        ctx, page, errs = new_page(browser, "en")
+        page.goto(base + "?lang=nl")
+        settle(page)
+        check(page.evaluate("document.documentElement.lang") == "nl" and page.evaluate("location.search") == "",
+              "?lang=nl opens in Dutch and cleans the URL")
+        page.evaluate("location.hash='#radar'"); page.wait_for_timeout(300)
+        kp = page.inner_text(".kpis")
+        check("34,5%" in kp and "42,4%" in kp and "34.5" not in kp, f"NL numbers use a decimal comma: {kp.split(chr(10))[:6]}")
+        ctx.close()
+        for lang in LANGS:
+            ctx, page, errs = new_page(browser, lang)
+            page.goto(base + "?c=RET20507")
+            settle(page)
+            top = page.evaluate("document.getElementById('bincard').getBoundingClientRect().top")
+            check(0 <= top < 200, f"{lang} scan of sticker: container card is on the first screen (top={top:.0f}px)")
+            shoot(page, f"{lang}_scan_first_screen")
+            ctx.close()
+        ctx, page, errs = new_page(browser, "en", {"plek_posts": json.dumps([{"title": "Old chair", "k": "Grof", "where": "Bijlmerdreef", "at": 0}])})
+        page.goto(base + "#give")
+        settle(page)
+        check(page.is_visible("a.pill[href='#bulky']") and "0 h left" not in page.inner_text("#view"),
+              "own Geef door post older than 48 h offers the free pickup")
+        check(page.evaluate("!!document.querySelector('link[rel=icon]')"), "favicon present")
         ctx.close()
 
         browser.close()
