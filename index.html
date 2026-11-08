@@ -348,7 +348,7 @@ function locate(){
     let best=null, bd=Infinity; for(const o of BINS){ const d=dist(me,o); if(d<bd){bd=d;best=o;} }
     loc={st:bd>1500?'far':'ok', lat:me.lat, lon:me.lon, acc:pos.coords.accuracy, d:Math.round(bd)};
     if(loc.st==='ok'){ current=best; store.set('last',best.id); }
-    note=''; LM.want='me'; render();
+    notes.clear(); LM.want='me'; render();
   }, err=>{ loc={st:err.code===1?'denied':'error'}; render(); }, {enableHighAccuracy:true, timeout:12000, maximumAge:30000});
 }
 function locNote(){
@@ -364,7 +364,7 @@ const normId = s => String(s||'').trim().toUpperCase().replace(/\s+/g,'');
 const DEEP = normId(new URLSearchParams(location.search).get('c'));
 const DEEP_BIN = DEEP ? BINS.find(b=>normId(b.id)===DEEP) : null;
 let current = DEEP_BIN || BINS.find(b=>b.id===store.get('last','')) || BINS.find(b=>b.f==='Rest' && !b.a) || BINS[0];
-let note = DEEP && !DEEP_BIN ? 'nf' : '';
+let notes = new Set(DEEP && !DEEP_BIN ? ['nf'] : []); // confirmations shown for the current container (several can be on at once)
 if(DEEP && location.hash && location.hash!=='#bin') history.replaceState(null, '', location.pathname+location.search+'#bin');
 
 // ---------- views ----------
@@ -381,7 +381,7 @@ function viewBin(){
       <button class="btn ghost" type="button" id="rand">${t('random')}</button>
     </form>
     <datalist id="ids">${BINS.map(x=>`<option value="${esc(x.id)}">`).join('')}</datalist>
-    <p id="nf" class="muted" ${note==='nf'?'':'hidden'}>${t('notfound')}</p>
+    <p id="nf" class="muted" ${notes.has('nf')?'':'hidden'}>${t('notfound')}</p>
     ${window.L?`<div class="row"><button class="btn ghost icon" type="button" id="locate" ${loc.st==='wait'?'disabled':''}>${TAB_ICON.spot}${t(loc.st==='wait'?'loc_wait':'locate')}</button><span class="muted" style="font-size:13px">${t('loc_private')}</span></div>${locNote()}<div id="mapslot"></div>`:mapSVG('plain', b, full && nn ? nn.bin : null)}
     <p class="muted" style="font-size:13px">${t('map_hint')}</p>
   </section>
@@ -405,17 +405,17 @@ function viewBin(){
   <section class="card">
     <h3>${t('report')}</h3>
     <div class="row">${['r_block','r_bags','r_bulky','r_broken'].map(k=>`<button class="chip" type="button" data-report="${k}">${t(k)}</button>`).join('')}</div>
-    ${note==='reported'?`<p class="toast">${t('reported')}</p>`:''}
+    ${notes.has('reported')?`<p class="toast">${t('reported')}</p>`:''}
   </section>
   ${b.a?'':`<section class="card"><h3>${t('host_title')}</h3><p class="muted">${t('host_text')}</p>
-    ${note==='host'?`<p class="toast">${t('host_done')}</p>`:`<button class="btn accent" type="button" id="host">${t('host_btn')}</button>`}</section>`}
+    ${notes.has('host')?`<p class="toast">${t('host_done')}</p>`:`<button class="btn accent" type="button" id="host">${t('host_btn')}</button>`}</section>`}
   <section class="card row" style="justify-content:space-between">
     <button class="btn ghost" type="button" id="setspot">${t('myspot_btn')}</button>
-    ${note==='spot'?`<span class="pill yes">✓ ${t('myspot_done')}</span>`:''}
+    ${notes.has('spot')?`<span class="pill yes">✓ ${t('myspot_done')}</span>`:''}
   </section>`;
 }
 function bindBin(){
-  const pick=b=>{ current=b; note=''; store.set('last',b.id); LM.want='sel'; render(); };
+  const pick=b=>{ current=b; notes.clear(); store.set('last',b.id); LM.want='sel'; render(); };
   if(window.L){ const first=lmapMount(pick); const nn=nearestSame(current); lmapUpdate(current, fillLevel(current)>=100 && nn ? nn.bin : null, first);
     document.getElementById('locate').addEventListener('click', locate); }
   else bindMap(pick);
@@ -425,9 +425,9 @@ function bindBin(){
     if(f) pick(f); else document.getElementById('nf').hidden=false; });
   document.getElementById('rand').addEventListener('click',()=>pick(BINS[Math.floor(Math.random()*BINS.length)]));
   document.querySelectorAll('[data-go]').forEach(el=>el.addEventListener('click',()=>pick(BINS.find(b=>b.id===el.dataset.go))));
-  document.querySelectorAll('[data-report]').forEach(el=>el.addEventListener('click',()=>{ note='reported'; render(); }));
-  const h=document.getElementById('host'); if(h) h.addEventListener('click',()=>{ note='host'; render(); });
-  document.getElementById('setspot').addEventListener('click',()=>{ store.set('spot',current.id); note='spot'; render(); });
+  document.querySelectorAll('[data-report]').forEach(el=>el.addEventListener('click',()=>{ notes.add('reported'); render(); }));
+  const h=document.getElementById('host'); if(h) h.addEventListener('click',()=>{ notes.add('host'); render(); });
+  document.getElementById('setspot').addEventListener('click',()=>{ store.set('spot',current.id); notes.add('spot'); render(); });
 }
 
 // Bulky: chat flow
@@ -558,7 +558,7 @@ function render(){
   document.getElementById('tabs').innerHTML=Object.keys(ROUTES).map(k=>`<a href="#${k}" ${k===r?'aria-current="page"':''}>${TAB_ICON[k]}<span>${t('tab_'+k)}</span></a>`).join('');
   const v=document.getElementById('view'); v.innerHTML=ROUTES[r][0](); ROUTES[r][1]();
 }
-window.addEventListener('hashchange',()=>{ note=''; render(); document.getElementById('view').scrollTop=0; });
+window.addEventListener('hashchange',()=>{ notes.clear(); render(); document.getElementById('view').scrollTop=0; });
 document.getElementById('lang-nl').addEventListener('click',()=>{ lang='nl'; store.set('lang',lang); render(); });
 document.getElementById('lang-en').addEventListener('click',()=>{ lang='en'; store.set('lang',lang); render(); });
 render();

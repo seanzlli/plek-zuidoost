@@ -232,6 +232,17 @@ def main():
         check(not errs, f"unknown ?c: no console errors {errs}")
         ctx.close()
 
+        # 5b. Confirmations stay visible together (demo flow: report -> host -> set as my spot)
+        ctx, page, errs = new_page(browser, "en")
+        page.goto(base + "?c=RET20507")
+        settle(page)
+        page.click("[data-report='r_bags']"); page.click("#host"); page.click("#setspot")
+        body = page.inner_text("#view")
+        check("ready to send to the city" in body and "neighbourhood coordinator" in body and "Saved as your spot" in body
+              and page.query_selector("#host") is None, "report, host and spot confirmations all stay on screen")
+        check(not errs, f"confirmations: no console errors {errs}")
+        ctx.close()
+
         # 6. Demo helpers and polish
         ctx, page, errs = new_page(browser, "nl", {"plek_taken": json.dumps(["ex0"]), "plek_spot": json.dumps("RET20507"), "plek_vote": "1"})
         page.goto(base + "?c=RET20507&reset")
