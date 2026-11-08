@@ -34,6 +34,7 @@ OVERFLOW_JS = """() => {
   const out = {W, doc: document.documentElement.scrollWidth, main: main.scrollWidth, mainClient: main.clientWidth, offenders: [], scrollers: []};
   for (const el of document.querySelectorAll('body *')) {
     const r = el.getBoundingClientRect(); if (!r.width) continue;
+    if (el.closest('.leaflet-container')) continue; // map tiles are clipped by the map box
     const wrap = el.closest('[style*="overflow-x:auto"]');
     if (!wrap && (r.right > W + 0.5 || r.left < -0.5))
       out.offenders.push(el.tagName.toLowerCase() + (el.className ? '.' + el.className : '') + ' right=' + Math.round(r.right));
@@ -42,7 +43,7 @@ OVERFLOW_JS = """() => {
     const q = card.getBoundingClientRect();
     for (const el of card.querySelectorAll('*')) {
       const r = el.getBoundingClientRect();
-      if (r.width && r.right > q.right + 0.5 && !el.closest('[style*="overflow-x:auto"]'))
+      if (r.width && r.right > q.right + 0.5 && !el.closest('[style*="overflow-x:auto"]') && !el.closest('.leaflet-container'))
         out.offenders.push('outside its card: ' + el.tagName.toLowerCase() + (el.className ? '.' + el.className : ''));
     }
   }
@@ -52,8 +53,8 @@ OVERFLOW_JS = """() => {
 }"""
 
 
-def new_page(browser, lang, extra_storage=None):
-    ctx = browser.new_context(viewport={"width": W, "height": H}, device_scale_factor=2)
+def new_page(browser, lang, extra_storage=None, **ctx_opts):
+    ctx = browser.new_context(viewport={"width": W, "height": H}, device_scale_factor=2, **ctx_opts)
     storage = {"plek_lang": json.dumps(lang), **(extra_storage or {})}
     ctx.add_init_script("(" + "s => { for (const k in s) localStorage.setItem(k, s[k]); }" + f")({json.dumps(storage)})")
     page = ctx.new_page()
@@ -70,6 +71,7 @@ def settle(page):
 
 
 def shoot(page, name, full=False):
+    page.wait_for_timeout(400)  # let map tiles finish their fade-in
     if full:
         h = page.evaluate("document.querySelector('header').offsetHeight + document.getElementById('view').scrollHeight + document.getElementById('tabs').offsetHeight")
         page.set_viewport_size({"width": W, "height": max(H, h)})
@@ -86,24 +88,29 @@ def main():
     with sync_playwright() as p:
         browser = p.chromium.launch()
 
-        # 1. Every tab, both languages: screenshots + overflow + console
-        for lang in LANGS:
+        # 1. Every tab, both languages, light + dark: screenshots + overflow + console
+        for scheme, lang in [("light", "en"), ("light", "nl"), ("dark", "en"), ("dark", "nl")]:
             for tab in TABS:
                 extra = {"plek_spot": json.dumps("RET20507")} if tab == "spot" else None
-                ctx, page, errs = new_page(browser, lang, extra)
+                ctx, page, errs = new_page(browser, lang, extra, color_scheme=scheme)
                 page.goto(base + "#" + tab)
                 settle(page)
+                if tab == "bin":
+                    check(page.evaluate("!!window.L") and page.is_visible(".lmap"), f"{scheme}/{lang}/bin: live map loaded (Leaflet + SRI ok)")
+                    page.wait_for_function("document.querySelectorAll('.lmap .leaflet-tile-loaded').length > 0", timeout=15000)
+                    check(page.evaluate("document.querySelectorAll('.lmap path.bin').length") == 1206, f"{scheme}/{lang}/bin: 1,206 containers on the map")
+                tag = lang if scheme == "light" else f"dark_{lang}"
                 cur = page.get_attribute("nav a[aria-current=page]", "href")
-                check(cur == "#" + tab, f"{lang}/{tab}: tab is active ({cur})")
-                check(page.evaluate("document.documentElement.lang") == lang, f"{lang}/{tab}: html lang={lang}")
+                check(cur == "#" + tab, f"{tag}/{tab}: tab is active ({cur})")
+                check(page.evaluate("document.documentElement.lang") == lang, f"{tag}/{tab}: html lang={lang}")
                 o = page.evaluate(OVERFLOW_JS)
                 check(o["doc"] <= o["W"] and o["main"] <= o["mainClient"] and not o["offenders"],
-                      f"{lang}/{tab}: no horizontal overflow (doc {o['doc']}/{o['W']}, main {o['main']}/{o['mainClient']}, offenders {o['offenders'][:3]})")
+                      f"{tag}/{tab}: no horizontal overflow (doc {o['doc']}/{o['W']}, main {o['main']}/{o['mainClient']}, offenders {o['offenders'][:3]})")
                 if o["scrollers"]:
-                    log.append(f"NOTE {lang}/{tab}: inner horizontal scroller(s) {o['scrollers']}")
-                shoot(page, f"{lang}_{tab}")
-                shoot(page, f"{lang}_{tab}_full", full=True)
-                check(not errs, f"{lang}/{tab}: no console errors {errs}")
+                    log.append(f"NOTE {tag}/{tab}: inner horizontal scroller(s) {o['scrollers']}")
+                shoot(page, f"{tag}_{tab}")
+                shoot(page, f"{tag}_{tab}_full", full=True)
+                check(not errs, f"{tag}/{tab}: no console errors {errs}")
                 ctx.close()
 
         # 2. Copy checks
@@ -117,18 +124,63 @@ def main():
             check(bad not in html and (text is None or bad not in text), f"old copy gone: {bad!r}")
         ctx.close()
 
-        # 3. Bulky flow up to the Geef door hint (both languages)
+        # 3. Bulky flow: Geef door hint, and pickup dates start after the 48 h window for usable items
+        DAY_JS = """([off, lang]) => { const x = new Date(); x.setDate(x.getDate() + off);
+          return x.toLocaleDateString(lang === 'nl' ? 'nl-NL' : 'en-GB', {weekday:'long', day:'numeric', month:'long'}); }"""
         for lang in LANGS:
-            ctx, page, errs = new_page(browser, lang)
-            page.goto(base + "#bulky")
+            for usable, first_day in (("1", 3), ("0", 1)):
+                ctx, page, errs = new_page(browser, lang)
+                page.goto(base + "#bulky")
+                settle(page)
+                page.click("[data-item='0']")
+                page.click(f"[data-usable='{usable}']")
+                dates = page.eval_on_selector_all("[data-date]", "els => els.map(e => e.dataset.date)")
+                want_dates = [page.evaluate(DAY_JS, [first_day + i, lang]) for i in range(3)]
+                check(dates == want_dates, f"{lang}/bulky usable={usable}: pickup dates start today+{first_day} {dates}")
+                if usable == "1":
+                    want = "keep it inside" if lang == "en" else "houd het binnen"
+                    check(want in page.inner_text("#view"), f"{lang}/bulky: Geef door hint says {want!r}")
+                    shoot(page, f"{lang}_bulky_flow_full", full=True)
+                check(not errs, f"{lang}/bulky flow: no console errors {errs}")
+                ctx.close()
+
+        # 3b. "Use my location": found nearby, blocked, and far away
+        near_pt = {"latitude": 52.3218, "longitude": 4.9562}
+        NEAREST_JS = """([la, lo]) => { let best = null, bd = Infinity;
+          for (const o of BINS) { const d = dist({lat: la, lon: lo}, o); if (d < bd) { bd = d; best = o; } } return [best.id, Math.round(bd)]; }"""
+        for lang in LANGS:
+            ctx, page, errs = new_page(browser, lang, geolocation=near_pt, permissions=["geolocation"])
+            page.goto(base)
             settle(page)
-            page.click("[data-item='0']")
-            page.click("[data-usable='1']")
-            want = "keep it inside" if lang == "en" else "houd het binnen"
-            check(want in page.inner_text("#view"), f"{lang}/bulky: Geef door hint says {want!r}")
-            shoot(page, f"{lang}_bulky_flow_full", full=True)
-            check(not errs, f"{lang}/bulky flow: no console errors {errs}")
+            page.click("#locate")
+            page.wait_for_selector(".lmap path.me", timeout=15000)
+            settle(page)
+            nid, nd = page.evaluate(NEAREST_JS, [near_pt["latitude"], near_pt["longitude"]])
+            body = page.inner_text("#view")
+            want = (f"nearest container ({nd}\u00a0m)" if lang == "en" else f"dichtstbijzijnde container ({nd}\u00a0m)")
+            check(want in body and f"{nid} ·" in body, f"{lang} locate (near): blue dot shown, {nid} selected, says {want!r}")
+            check(page.evaluate("LM.map.getBounds().contains([%f,%f])" % (near_pt["latitude"], near_pt["longitude"])), f"{lang} locate (near): map shows the user")
+            shoot(page, f"{lang}_locate_near")
+            check(not errs, f"{lang} locate (near): no console errors {errs}")
             ctx.close()
+        ctx, page, errs = new_page(browser, "en")  # no permission granted -> blocked
+        page.goto(base)
+        settle(page)
+        page.click("#locate")
+        page.wait_for_function("document.getElementById('view').innerText.includes('Location is blocked')", timeout=15000)
+        check(page.query_selector(".lmap path.me") is None, "locate (blocked): message shown, no dot")
+        check(not errs, f"locate (blocked): no console errors {errs}")
+        ctx.close()
+        ctx, page, errs = new_page(browser, "en", {"plek_last": json.dumps("RET20385")},
+                                   geolocation={"latitude": 52.3791, "longitude": 4.9003}, permissions=["geolocation"])  # Amsterdam Centraal
+        page.goto(base)
+        settle(page)
+        page.click("#locate")
+        page.wait_for_function("document.getElementById('view').innerText.includes('from the nearest Zuidoost container')", timeout=15000)
+        check("RET20385 ·" in page.inner_text("#view") and page.query_selector(".lmap path.me") is not None,
+              "locate (far, Amsterdam Centraal): dot shown, selection unchanged")
+        check(not errs, f"locate (far): no console errors {errs}")
+        ctx.close()
 
         # 4. Nearest-container wording for 'Onbekend' and 'Grof'
         for lang, words in [("en", {"Onbekend": "Nearest other container (type not listed)", "Grof": "Nearest other bulky waste point"}),
@@ -164,6 +216,8 @@ def main():
                 body = page.inner_text("#view")
                 ok = cur == "#bin" and "RET20507 ·" in body and page.is_hidden("#nf")
                 check(ok, f"{lang} deep link {q} ({label}): Bin tab ({cur}), shows RET20507")
+                zc = page.evaluate("[LM.map.getZoom(), LM.map.getCenter().distanceTo([52.32142, 4.95545])]")
+                check(zc[0] == 17 and zc[1] < 5, f"{lang} deep link {q}: map zoomed to RET20507 (zoom {zc[0]}, {zc[1]:.1f} m off)")
                 check(not errs, f"{lang} deep link {q}: no console errors {errs}")
                 if i == 0:
                     shoot(page, f"{lang}_deeplink_RET20507")

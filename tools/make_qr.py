@@ -20,7 +20,7 @@ STICKER_URL = f"{BASE}?c={CID}"
 OUT = Path(__file__).resolve().parent.parent / "qr"
 OUT.mkdir(exist_ok=True)
 
-FONTS = '<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Public+Sans:wght@400;600;700&display=swap" rel="stylesheet">'
+FONTS = '<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">'
 # Same icons as the app's tab bar (index.html TAB_ICON)
 ICON = {
     "bin": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 8h16l-1.5 12h-13z"/><path d="M8 8V5h8v3"/></svg>',
@@ -43,7 +43,7 @@ html,body{{margin:0;width:1920px;height:1080px;background:#F4F1EA;color:#1C1B22;
 .wrap{{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:34px}}
 .qr{{background:#fff;border-radius:32px;padding:12px;box-shadow:0 0 0 2px #DDD6C8}}
 .qr svg{{display:block;width:680px;height:680px}}
-h1{{margin:0;font:700 92px/1 'Space Grotesk',sans-serif;letter-spacing:-1.5px;display:flex;align-items:center;gap:28px}}
+h1{{margin:0;font:800 88px/1 'Public Sans',sans-serif;letter-spacing:-1.5px;display:flex;align-items:center;gap:28px}}
 h1 em{{font-style:normal;color:#C8102E}}
 .logo{{width:92px;height:92px;border-radius:26px;background:#C8102E;color:#fff;display:grid;place-items:center}}
 .logo svg{{width:56px;height:56px}}
@@ -66,17 +66,17 @@ html,body{{margin:0;width:105mm;height:148mm;background:#fff;color:#1C1B22;font-
 .head{{background:#C8102E;color:#fff;border-radius:4mm;padding:3.6mm 4.5mm;display:flex;align-items:center;gap:3.2mm}}
 .head .logo{{width:11mm;height:11mm;border-radius:3mm;background:#fff;color:#C8102E;display:grid;place-items:center;flex:none}}
 .head .logo svg{{width:7mm;height:7mm}}
-.head b{{font:700 10.5mm/1 'Space Grotesk',sans-serif;letter-spacing:-.25mm}}
+.head b{{font:800 10.5mm/1 'Public Sans',sans-serif;letter-spacing:-.25mm}}
 .qr{{align-self:center}}
 .qr svg{{display:block;width:62mm;height:62mm}}
 .lines{{display:flex;flex-direction:column;gap:2.6mm}}
 .line{{display:flex;align-items:center;gap:2.8mm;white-space:nowrap}}
 .line svg{{width:6.4mm;height:6.4mm;flex:none;color:#C8102E}}
-.line b{{font:700 4.6mm/1.1 'Space Grotesk',sans-serif}}
+.line b{{font:800 4.5mm/1.1 'Public Sans',sans-serif}}
 .line span{{font:600 4.2mm/1.1 'Public Sans',sans-serif;color:#5B5866}}
 .id{{margin-top:auto;border-top:.35mm solid #DDD6C8;padding-top:3mm;display:flex;justify-content:space-between;align-items:center}}
 .id small{{font:600 3.1mm/1.25 'Public Sans',sans-serif;color:#5B5866}}
-.id b{{font:700 7.5mm/1 'Space Grotesk',sans-serif;letter-spacing:.35mm}}
+.id b{{font:800 7.5mm/1 'Public Sans',sans-serif;letter-spacing:.3mm;font-variant-numeric:tabular-nums}}
 </style></head><body><div class="sheet">
 <div class="head"><span class="logo">{LOGO}</span><b>Onze Plek</b></div>
 <div class="qr">%QR%</div>

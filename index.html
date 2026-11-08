@@ -5,14 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Plek app prototype</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Public+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" integrity="sha512-h9FcoyWjHcOcmEVkxOfTLnmZFWIH0iZhZT1H2TbOq55xssQGEJHEaIm+PgoUaZbRvQTNTluNOEfb1ZRy6D3BOw==" crossorigin="anonymous" referrerpolicy="no-referrer">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" integrity="sha512-puJW3E/qXDqYp9IfhAI54BJEaWIfloJ7JWs7OeD5i6ruC9JZL1gERT1wjtwXFlh7CjE7ZJ+/vcRZRkIYIb6p4g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <style>
 :root{
   /* Layout: one phone-width column, header + view + bottom tab bar (works as an app on mobile, centered on desktop) */
   --bg:#F4F1EA; --surface:#FFFDF8; --ink:#1C1B22; --muted:#5B5866; --line:#DDD6C8;
   --accent:#C8102E; --accent-ink:#FFFFFF;
-  --yes:#1F5FA8; --no:#C25A0E; --okbg:#E6EFF9; --warnbg:#FBEADB;
-  --display:'Space Grotesk', 'Trebuchet MS', sans-serif; --body:'Public Sans', Arial, sans-serif;
+  --yes:#1F5FA8; --no:#A34A0B; --okbg:#E6EFF9; --warnbg:#FBEADB;
+  --display:'Public Sans', Arial, sans-serif; --body:'Public Sans', Arial, sans-serif;
   --r:14px;
   color-scheme: light;
 }
@@ -26,54 +28,72 @@
 html,body{height:100%;margin:0}
 body{background:var(--bg);color:var(--ink);font:16px/1.45 var(--body);display:flex;justify-content:center}
 .app{width:100%;max-width:560px;height:100%;display:flex;flex-direction:column;background:var(--bg)}
-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line);background:var(--surface)}
-.brand{display:flex;align-items:center;gap:10px}
-.brand b{font:700 22px/1 var(--display);letter-spacing:-.3px}
-.brand small{color:var(--muted);font-size:12px;display:block;margin-top:2px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line);background:var(--surface)}
+.brand{display:flex;align-items:center;gap:12px}
+.brand b{font:800 22px/1 var(--display);letter-spacing:-.3px}
+.brand small{color:var(--muted);font-size:12px;display:block;margin-top:4px}
 .logo{width:30px;height:30px;border-radius:9px;background:var(--accent);display:grid;place-items:center}
 .seg{display:flex;border:1px solid var(--line);border-radius:999px;overflow:hidden}
-.seg button{border:0;background:transparent;color:var(--muted);font:600 13px var(--body);padding:6px 10px;cursor:pointer}
+.seg button{border:0;background:transparent;color:var(--muted);font:600 13px var(--body);padding:8px 12px;cursor:pointer}
 .seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
-main{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:14px}
+main{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:16px}
 nav{display:grid;grid-template-columns:repeat(5,1fr);border-top:1px solid var(--line);background:var(--surface)}
-nav a{display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 2px 11px;color:var(--muted);text-decoration:none;font-size:12px;font-weight:600}
+nav a{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px 12px;color:var(--muted);text-decoration:none;font-size:12px;font-weight:600}
 nav a svg{width:22px;height:22px}
 nav a[aria-current="page"]{color:var(--accent)}
 h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance}
-h1{font-size:24px;line-height:1.15}
+h1{font-size:24px;line-height:1.15;font-weight:800;letter-spacing:-.2px}
 h2{font-size:19px}
 h3{font-size:16px}
 p{margin:0}
 .muted{color:var(--muted)}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:12px}
-.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.btn{border:1px solid var(--ink);background:var(--ink);color:var(--bg);font:600 15px var(--body);padding:11px 14px;border-radius:12px;cursor:pointer}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.btn{border:1px solid var(--ink);background:var(--ink);color:var(--bg);font:600 15px var(--body);padding:12px 16px;border-radius:12px;cursor:pointer}
 .btn.ghost{background:transparent;color:var(--ink)}
 .btn.accent{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .btn:focus-visible,.chip:focus-visible,nav a:focus-visible,.seg button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--yes);outline-offset:2px}
 .chip{border:1px solid var(--line);background:var(--surface);color:var(--ink);font:600 14px var(--body);padding:8px 12px;border-radius:999px;cursor:pointer}
 .chip[aria-pressed="true"]{border-color:var(--ink);background:var(--ink);color:var(--bg)}
-.pill{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;padding:4px 10px;border-radius:999px}
+.pill{display:inline-flex;align-items:center;gap:4px;font-size:13px;font-weight:700;padding:4px 12px;border-radius:999px}
 .pill.yes{background:var(--okbg);color:var(--yes)}
 .pill.no{background:var(--warnbg);color:var(--no)}
 .pill.demo{background:transparent;border:1px dashed var(--muted);color:var(--muted);font-weight:600}
-input,select{font:16px var(--body);padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);width:100%}
+input,select{font:16px var(--body);padding:12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);width:100%}
 label{font-size:13px;font-weight:700;color:var(--muted)}
-.field{display:flex;flex-direction:column;gap:6px;flex:1;min-width:140px}
+.field{display:flex;flex-direction:column;gap:8px;flex:1;min-width:140px}
 .map{width:100%;height:auto;display:block;background:var(--bg);border-radius:10px;border:1px solid var(--line);cursor:crosshair;touch-action:manipulation}
-.bin-head{display:flex;gap:14px;align-items:center}
+.lmap{height:320px;border-radius:10px;border:1px solid var(--line);background:var(--bg);isolation:isolate}
+.lmap.leaflet-container{font:12px/1.4 var(--body)}
+.lmap path.bin{fill:var(--muted);fill-opacity:.7;stroke:var(--surface);stroke-width:1}
+.lmap.far path.bin{stroke-width:0;fill-opacity:.6}
+.lmap path.sel{fill:var(--accent);fill-opacity:1;stroke:var(--surface);stroke-width:3}
+.lmap path.near{fill:none;stroke:var(--yes);stroke-width:3}
+.lmap path.me{fill:var(--yes);fill-opacity:1;stroke:var(--surface);stroke-width:3}
+.lmap path.acc{fill:var(--yes);fill-opacity:.12;stroke:var(--yes);stroke-opacity:.45;stroke-width:1}
+.lmap .leaflet-bar{border:1px solid var(--line);box-shadow:none}
+.lmap .leaflet-bar a{background:var(--surface);color:var(--ink);border-bottom-color:var(--line)}
+.lmap .leaflet-control-attribution{background:var(--surface);color:var(--muted);font-size:11px}
+.lmap .leaflet-control-attribution a{color:var(--muted)}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .lmap .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.85) contrast(.9)} }
+:root[data-theme="dark"] .lmap .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.85) contrast(.9)}
+.btn.icon{display:inline-flex;align-items:center;gap:8px}
+.btn.icon svg{width:18px;height:18px}
+.btn:disabled{cursor:progress}
+.bin-head{display:flex;gap:16px;align-items:center}
 .pict{width:64px;height:64px;border-radius:16px;display:grid;place-items:center;flex:none;background:var(--bg);border:1px solid var(--line)}
 .pict svg{width:38px;height:38px}
 .meter{height:12px;border-radius:999px;background:var(--bg);border:1px solid var(--line);overflow:hidden}
 .meter i{display:block;height:100%;background:var(--yes)}
 .tip{display:flex;gap:12px;align-items:center;background:var(--okbg);border-radius:12px;padding:12px}
 .tip svg{flex:none;width:40px;height:40px}
-.toast{background:var(--ink);color:var(--bg);border-radius:12px;padding:12px 14px;font-weight:600}
-.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
-.kpi{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px}
+.toast{background:var(--ink);color:var(--bg);border-radius:12px;padding:12px 16px;font-weight:600}
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+.kpi{padding:4px 12px;border-left:1px solid var(--line)}
+.kpi:first-child{padding-left:0;border-left:0}
 .kpi b{display:block;font:700 24px/1.1 var(--display);font-variant-numeric:tabular-nums}
 .kpi span{font-size:12px;color:var(--muted);display:block;-webkit-hyphens:auto;hyphens:auto;overflow-wrap:break-word}
-.bars{display:flex;flex-direction:column;gap:7px}
+.bars{display:flex;flex-direction:column;gap:8px}
 .bar{display:grid;grid-template-columns:92px 1fr 48px;gap:8px;align-items:center;font-size:13px}
 .bar .track{height:14px;position:relative}
 .bar .fill{height:100%;border-radius:0 4px 4px 0;background:var(--muted);opacity:.55}
@@ -82,24 +102,24 @@ label{font-size:13px;font-weight:700;color:var(--muted)}
 .bar .avg{position:absolute;top:-3px;bottom:-3px;border-left:2px dashed var(--ink)}
 .bar span:last-child{text-align:right;font-variant-numeric:tabular-nums}
 table{width:100%;border-collapse:collapse;font-size:14px}
-th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line)}
+th,td{text-align:left;padding:8px;border-bottom:1px solid var(--line)}
 th{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
 td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
 .chat{display:flex;flex-direction:column;gap:8px}
-.msg{max-width:85%;padding:10px 12px;border-radius:14px;font-size:15px}
+.msg{max-width:85%;padding:8px 12px;border-radius:14px;font-size:15px}
 .msg.bot{background:var(--surface);border:1px solid var(--line);align-self:flex-start;border-bottom-left-radius:4px}
 .msg.me{background:var(--yes);color:var(--surface);align-self:flex-end;border-bottom-right-radius:4px}
 .item{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--line)}
 .item:last-child{border-bottom:0}
 .item .pict{width:46px;height:46px;border-radius:12px}
 .item .pict svg{width:26px;height:26px}
-.cal{display:grid;grid-template-columns:repeat(10,1fr);gap:5px}
+.cal{display:grid;grid-template-columns:repeat(10,1fr);gap:4px}
 .cal i{aspect-ratio:1;border-radius:5px;background:var(--yes)}
 .cal i.bad{background:var(--no)}
 .progress{height:16px;border-radius:999px;background:var(--bg);border:1px solid var(--line);overflow:hidden}
 .progress i{display:block;height:100%;background:var(--accent)}
-.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
-.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:-1px}
 [hidden]{display:none !important}
 @media (prefers-reduced-motion: reduce){*{transition:none !important}}
 </style>
@@ -134,7 +154,10 @@ let lang = store.get('lang', 'en');
 
 const T = {
 en:{num:'Container number', tagline:'Our spot, Zuidoost · prototype', tab_bin:'Bin', tab_bulky:'Bulky', tab_give:'Give away', tab_spot:'My spot', tab_radar:'City',
- bin_title:'Which container are you at?', bin_sub:'In the real app you scan the QR code on the lid. Here: type the number on the container, tap a dot on the map, or pick one.',
+ bin_title:'Which container are you at?', bin_sub:'In the real app you scan the QR code on the lid. Here: type the number on the container, tap a dot on the map, or use your location.',
+ locate:'Use my location', loc_wait:'Finding you…', loc_private:'Your location stays on your phone.',
+ loc_ok:'You’re the blue dot. The nearest container ({d}\u00a0m) is selected below.', loc_far:'You’re {km}\u00a0km from the nearest Zuidoost container, so nothing was selected.',
+ loc_denied:'Location is blocked. Allow it in your browser settings, or tap a dot.', loc_error:'Couldn’t find your location. Tap a dot instead.',
  find:'Find', random:'Show a container', placeholder:'e.g. RET20385', notfound:'No container with that number in Zuidoost.',
  map_hint:'1,206 real Zuidoost containers (City of Amsterdam open data). Tap one.',
  frac:{Rest:'Residual waste',Papier:'Paper & cardboard',Glas:'Glass',Textiel:'Textiles',GFT:'Food & garden waste',Grof:'Bulky waste point',Onbekend:'Type not listed'},
@@ -151,7 +174,7 @@ en:{num:'Container number', tagline:'Our spot, Zuidoost · prototype', tab_bin:'
  b_q1:'Hi! What do you want to get rid of?', b_items:['Sofa','Mattress','Cupboard','Fridge or washer','Big boxes','Something else'],
  b_q2:'Is it still usable?', yes:'Yes', no:'No',
  b_give:'Great. Post it on Geef door first and keep it inside: a neighbour picks it up from you. If nobody does within 48 hours, book the free pickup here.', b_give_btn:'Post on Geef door', b_skip:'Just book the pickup',
- b_q3:'When should we collect it? Put it outside by 07:30 that morning.', b_q4:'Which street and house number?', b_addr_ph:'e.g. Bijlmerdreef 101', send:'Send',
+ b_q3:'When should we collect it? Put it outside by 07:30 that morning.', b_q3_give:'Pick a backup day after the 48 hours. If a neighbour takes it first, just cancel. Put it outside by 07:30 that morning.', b_q4:'Which street and house number?', b_addr_ph:'e.g. Bijlmerdreef 101', send:'Send',
  b_done:'Booked! Reference {r}. We collect your {i} on {d}. You get a reminder the evening before. (Demo: nothing is booked.)', restart:'Start again',
  give_title:'Geef door', give_sub:'Still usable? Give it to a neighbour. Keep it inside until they pick it up, never next to the container. Nobody within 48 hours? Book a free bulky pickup in the Bulky tab.',
  example:'Example', left:'h left', take:'I’ll take it', taken:'Reserved for you', post:'Post an item', what:'What is it?', where:'Your street (item stays inside)', post_btn:'Post for 48 hours', yours:'Your post',
@@ -168,7 +191,10 @@ en:{num:'Container number', tagline:'Our spot, Zuidoost · prototype', tab_bin:'
  th_bu:'Neighbourhood', th_n:'Containers', th_a:'Adopted',
  mix:'Container types', abp:'ABP hotspot layer: waiting for data export from the city', fill_layer:'Fill sensors: not connected', data_note:'Source: City of Amsterdam, household waste containers (WFS), downloaded 7 Nov 2026.'},
 nl:{num:'Containernummer', tagline:'Onze plek, Zuidoost · prototype', tab_bin:'Bak', tab_bulky:'Grof', tab_give:'Geef door', tab_spot:'Mijn plek', tab_radar:'Gemeente',
- bin_title:'Bij welke container sta je?', bin_sub:'In de echte app scan je de QR-code op de klep. Hier: typ het nummer op de container, tik op een punt op de kaart, of kies er een.',
+ bin_title:'Bij welke container sta je?', bin_sub:'In de echte app scan je de QR-code op de klep. Hier: typ het nummer op de container, tik op een punt op de kaart, of gebruik je locatie.',
+ locate:'Gebruik mijn locatie', loc_wait:'Je locatie zoeken…', loc_private:'Je locatie blijft op je telefoon.',
+ loc_ok:'Jij bent de blauwe stip. De dichtstbijzijnde container ({d}\u00a0m) staat hieronder.', loc_far:'Je bent {km}\u00a0km van de dichtstbijzijnde container in Zuidoost, dus er is niets geselecteerd.',
+ loc_denied:'Locatie is geblokkeerd. Sta het toe in je browserinstellingen, of tik op een punt.', loc_error:'Je locatie is niet gevonden. Tik op een punt.',
  find:'Zoek', random:'Toon een container', placeholder:'bijv. RET20385', notfound:'Geen container met dat nummer in Zuidoost.',
  map_hint:'1.206 echte containers in Zuidoost (open data gemeente Amsterdam). Tik er een aan.',
  frac:{Rest:'Restafval',Papier:'Papier & karton',Glas:'Glas',Textiel:'Textiel',GFT:'Groente-, fruit- & etensresten',Grof:'Grofafvalplek',Onbekend:'Type onbekend'},
@@ -185,7 +211,7 @@ nl:{num:'Containernummer', tagline:'Onze plek, Zuidoost · prototype', tab_bin:'
  b_q1:'Hoi! Wat wil je kwijt?', b_items:['Bank','Matras','Kast','Koelkast of wasmachine','Grote dozen','Iets anders'],
  b_q2:'Is het nog bruikbaar?', yes:'Ja', no:'Nee',
  b_give:'Top. Zet het eerst op Geef door en houd het binnen: een buur haalt het bij je op. Neemt niemand het binnen 48 uur, boek dan hier de gratis ophaalafspraak.', b_give_btn:'Zet op Geef door', b_skip:'Gewoon ophalen',
- b_q3:'Wanneer halen we het op? Zet het die ochtend voor 07:30 buiten.', b_q4:'Welke straat en huisnummer?', b_addr_ph:'bijv. Bijlmerdreef 101', send:'Verstuur',
+ b_q3:'Wanneer halen we het op? Zet het die ochtend voor 07:30 buiten.', b_q3_give:'Kies alvast een reservedag na de 48 uur. Neemt een buur het eerder mee, dan annuleer je gewoon. Zet het die ochtend voor 07:30 buiten.', b_q4:'Welke straat en huisnummer?', b_addr_ph:'bijv. Bijlmerdreef 101', send:'Verstuur',
  b_done:'Geboekt! Kenmerk {r}. We halen je {i} op {d}. Je krijgt de avond ervoor een herinnering. (Demo: er is niets geboekt.)', restart:'Opnieuw',
  give_title:'Geef door', give_sub:'Nog bruikbaar? Geef het aan een buur. Houd het binnen tot die het ophaalt, nooit naast de container. Na 48 uur niemand? Boek in het tabblad Grof een gratis ophaalafspraak.',
  example:'Voorbeeld', left:'u over', take:'Ik neem het', taken:'Voor jou gereserveerd', post:'Iets aanbieden', what:'Wat is het?', where:'Je straat (het blijft binnen)', post_btn:'Plaats voor 48 uur', yours:'Jouw bericht',
@@ -261,6 +287,66 @@ function bindMap(onPick){
   });
 }
 
+// ---------- live map: Leaflet + PDOK basemap (Kadaster). Falls back to the SVG map if Leaflet can't load ----------
+const PDOK='https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0/grijs/EPSG:3857/{z}/{x}/{y}.png';
+const LM={map:null, el:null, want:null};
+let loc={st:''}; // '', 'wait', 'ok', 'far', 'denied', 'error'. Kept in memory only, never stored or sent.
+const allBounds=()=>L.latLngBounds(BINS.map(b=>[b.lat,b.lon]));
+function lmapMount(onPick){
+  const slot=document.getElementById('mapslot'); if(!slot) return false;
+  LM.onPick=onPick;
+  if(!LM.el){ LM.el=document.createElement('div'); LM.el.className='lmap'; LM.el.setAttribute('aria-label','Map of Zuidoost containers'); }
+  slot.replaceWith(LM.el);
+  if(LM.map){ LM.map.invalidateSize(); return false; }
+  LM.map=L.map(LM.el,{scrollWheelZoom:false, maxZoom:19}).fitBounds(allBounds(),{padding:[8,8]}); // a view must exist before markers are drawn
+  LM.map.attributionControl.setPrefix('<a href="https://leafletjs.com">Leaflet</a>');
+  L.tileLayer(PDOK,{maxZoom:19, attribution:'Kaart © <a href="https://www.kadaster.nl">Kadaster</a> (PDOK)'}).addTo(LM.map);
+  const dotR=z=>z<=12?2:z<=13?2.5:z<=14?3:z<=15?3.5:4.5; // keep 1,206 dots readable at every zoom
+  LM.bins=BINS.map(b=>L.circleMarker([b.lat,b.lon],{radius:dotR(LM.map.getZoom()), className:'bin', bubblingMouseEvents:false}).on('click',()=>LM.onPick(b)).addTo(LM.map));
+  const onZoom=()=>{ const z=LM.map.getZoom(); LM.el.classList.toggle('far', z<=13); for(const mk of LM.bins) mk.setRadius(dotR(z)); };
+  LM.map.on('zoomend', onZoom); onZoom();
+  LM.map.on('click',e=>{ let best=null, bd=Infinity; // fat-finger friendly: nearest dot within 24px of the tap
+    for(const b of BINS){ const d=LM.map.latLngToContainerPoint([b.lat,b.lon]).distanceTo(e.containerPoint); if(d<bd){bd=d;best=b;} }
+    if(best && bd<24) LM.onPick(best); });
+  LM.near=L.circleMarker([0,0],{radius:11, className:'near', interactive:false});
+  LM.sel=L.circleMarker([0,0],{radius:9, className:'sel', interactive:false});
+  LM.acc=L.circle([0,0],{radius:1, className:'acc', interactive:false});
+  LM.me=L.circleMarker([0,0],{radius:7, className:'me', interactive:false});
+  return true;
+}
+function lmapUpdate(b, near, first){
+  const m=LM.map, ll=L.latLng(b.lat,b.lon);
+  if(near) LM.near.setLatLng([near.lat,near.lon]).addTo(m); else LM.near.remove();
+  LM.sel.setLatLng(ll).addTo(m); LM.sel.bringToFront();
+  const hasMe=loc.st==='ok'||loc.st==='far';
+  if(hasMe){ LM.acc.setLatLng([loc.lat,loc.lon]).setRadius(Math.min(loc.acc||0,500)).addTo(m); LM.me.setLatLng([loc.lat,loc.lon]).addTo(m); LM.me.bringToFront(); }
+  else { LM.acc.remove(); LM.me.remove(); }
+  const want=first ? (DEEP_BIN?'deep':'all') : LM.want; LM.want=null;
+  if(want==='all') m.fitBounds(allBounds(),{padding:[8,8]});
+  else if(want==='deep') m.setView(ll,17);
+  else if(want==='sel'){ if(near) m.fitBounds(L.latLngBounds([ll,[near.lat,near.lon]]),{padding:[40,40],maxZoom:18});
+    else if(m.getZoom()<16) m.setView(ll,16); else if(!m.getBounds().pad(-0.2).contains(ll)) m.panTo(ll); }
+  else if(want==='me'){ if(loc.st==='ok') m.fitBounds(L.latLngBounds([[loc.lat,loc.lon],ll]),{padding:[48,48],maxZoom:18});
+    else if(loc.st==='far') m.fitBounds(allBounds().extend([loc.lat,loc.lon]),{padding:[24,24]}); }
+}
+function locate(){
+  if(!navigator.geolocation){ loc={st:'error'}; render(); return; }
+  loc={st:'wait'}; render();
+  navigator.geolocation.getCurrentPosition(pos=>{
+    const me={lat:pos.coords.latitude, lon:pos.coords.longitude};
+    let best=null, bd=Infinity; for(const o of BINS){ const d=dist(me,o); if(d<bd){bd=d;best=o;} }
+    loc={st:bd>1500?'far':'ok', lat:me.lat, lon:me.lon, acc:pos.coords.accuracy, d:Math.round(bd)};
+    if(loc.st==='ok'){ current=best; store.set('last',best.id); }
+    note=''; LM.want='me'; render();
+  }, err=>{ loc={st:err.code===1?'denied':'error'}; render(); }, {enableHighAccuracy:true, timeout:12000, maximumAge:30000});
+}
+function locNote(){
+  if(loc.st==='ok') return `<p style="font-size:14px">${t('loc_ok').replace('{d}',loc.d)}</p>`;
+  if(loc.st==='far') return `<p class="muted" style="font-size:14px">${t('loc_far').replace('{km}',(loc.d/1000).toLocaleString(lang==='nl'?'nl-NL':'en-GB',{maximumFractionDigits:1}))}</p>`;
+  if(loc.st==='denied'||loc.st==='error') return `<p class="muted" style="font-size:14px">${t('loc_'+loc.st)}</p>`;
+  return '';
+}
+
 // ---------- state ----------
 // Deep link (QR sticker on the lid): ?c=<container ID> opens that container in the Bin tab
 const normId = s => String(s||'').trim().toUpperCase().replace(/\s+/g,'');
@@ -285,13 +371,13 @@ function viewBin(){
     </form>
     <datalist id="ids">${BINS.map(x=>`<option value="${esc(x.id)}">`).join('')}</datalist>
     <p id="nf" class="muted" ${note==='nf'?'':'hidden'}>${t('notfound')}</p>
-    ${mapSVG('plain', b, full && nn ? nn.bin : null)}
+    ${window.L?`<div class="row"><button class="btn ghost icon" type="button" id="locate" ${loc.st==='wait'?'disabled':''}>${TAB_ICON.spot}${t(loc.st==='wait'?'loc_wait':'locate')}</button><span class="muted" style="font-size:13px">${t('loc_private')}</span></div>${locNote()}<div id="mapslot"></div>`:mapSVG('plain', b, full && nn ? nn.bin : null)}
     <p class="muted" style="font-size:13px">${t('map_hint')}</p>
   </section>
   <section class="card">
     <div class="bin-head">
       <div class="pict" style="color:var(--ink)">${ICON[b.f]||ICON.Onbekend}</div>
-      <div style="display:flex;flex-direction:column;gap:6px">
+      <div style="display:flex;flex-direction:column;gap:8px">
         <h2>${esc(fname)}</h2>
         <p class="muted" style="font-size:14px">${esc(b.id)} · ${t('neighbourhood')} ${esc(b.bu)}</p>
         <span class="pill ${b.a?'yes':'no'}">${b.a?'✓ '+t('adopted'):t('notadopted')}</span>
@@ -318,8 +404,10 @@ function viewBin(){
   </section>`;
 }
 function bindBin(){
-  const pick=b=>{ current=b; note=''; store.set('last',b.id); render(); };
-  bindMap(pick);
+  const pick=b=>{ current=b; note=''; store.set('last',b.id); LM.want='sel'; render(); };
+  if(window.L){ const first=lmapMount(pick); const nn=nearestSame(current); lmapUpdate(current, fillLevel(current)>=100 && nn ? nn.bin : null, first);
+    document.getElementById('locate').addEventListener('click', locate); }
+  else bindMap(pick);
   document.getElementById('findform').addEventListener('submit',e=>{ e.preventDefault();
     const q=document.getElementById('q').value.trim().toUpperCase().replace(/\s+/g,'');
     const f=BINS.find(b=>b.id.toUpperCase().replace(/\s+/g,'')===q);
@@ -333,7 +421,7 @@ function bindBin(){
 
 // Bulky: chat flow
 let chat = {step:0, item:null, usable:null, date:null, addr:'', ref:null};
-function nextDays(){ const out=[]; const d=new Date(); for(let i=1;i<=3;i++){ const x=new Date(d); x.setDate(d.getDate()+i);
+function nextDays(start){ const out=[]; const d=new Date(); for(let i=start;i<start+3;i++){ const x=new Date(d); x.setDate(d.getDate()+i);
   out.push(x.toLocaleDateString(lang==='nl'?'nl-NL':'en-GB',{weekday:'long',day:'numeric',month:'long'})); } return out; }
 function viewBulky(){
   const m=[]; const bot=s=>m.push(`<div class="msg bot">${s}</div>`), me=s=>m.push(`<div class="msg me">${esc(s)}</div>`);
@@ -341,8 +429,8 @@ function viewBulky(){
   if(chat.step===0) controls=t('b_items').map((x,i)=>`<button class="chip" type="button" data-item="${i}">${x}</button>`).join('');
   if(chat.step>=1){ me(t('b_items')[chat.item]); bot(t('b_q2')); }
   if(chat.step===1) controls=`<button class="chip" type="button" data-usable="1">${t('yes')}</button><button class="chip" type="button" data-usable="0">${t('no')}</button>`;
-  if(chat.step>=2){ me(chat.usable?t('yes'):t('no')); if(chat.usable) bot(t('b_give')); bot(t('b_q3')); }
-  if(chat.step===2) controls=(chat.usable?`<a class="btn accent" href="#give" style="text-decoration:none">${t('b_give_btn')}</a>`:'')+nextDays().map(d=>`<button class="chip" type="button" data-date="${esc(d)}">${d}</button>`).join('');
+  if(chat.step>=2){ me(chat.usable?t('yes'):t('no')); if(chat.usable) bot(t('b_give')); bot(t(chat.usable?'b_q3_give':'b_q3')); }
+  if(chat.step===2) controls=(chat.usable?`<a class="btn accent" href="#give" style="text-decoration:none">${t('b_give_btn')}</a>`:'')+nextDays(chat.usable?3:1).map(d=>`<button class="chip" type="button" data-date="${esc(d)}">${d}</button>`).join('');
   if(chat.step>=3){ me(chat.date); bot(t('b_q4')); }
   if(chat.step===3) controls=`<form id="addrform" class="row" style="width:100%"><div class="field"><label for="addr">${t('b_q4')}</label><input id="addr" placeholder="${t('b_addr_ph')}" required></div><button class="btn" type="submit">${t('send')}</button></form>`;
   if(chat.step>=4){ me(chat.addr); bot(t('b_done').replace('{r}',chat.ref).replace('{i}',t('b_items')[chat.item].toLowerCase()).replace('{d}',chat.date)); controls=`<button class="btn ghost" type="button" id="restart">${t('restart')}</button>`; }
@@ -377,7 +465,7 @@ function viewGive(){
   return `<section class="card"><h1>${t('give_title')}</h1><p class="muted">${t('give_sub')}</p></section>
   <section class="card">${items.map(row).join('')}</section>
   <section class="card"><h3>${t('post')}</h3>
-    <form id="postform" style="display:flex;flex-direction:column;gap:10px">
+    <form id="postform" style="display:flex;flex-direction:column;gap:12px">
       <div class="field"><label for="ptitle">${t('what')}</label><input id="ptitle" required maxlength="60"></div>
       <div class="row">
         <div class="field"><label for="pkind">Type</label><select id="pkind">${['Grof','Textiel','Papier','Glas','Onbekend'].map(k=>`<option value="${k}">${t('frac')[k]}</option>`).join('')}</select></div>
