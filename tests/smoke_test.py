@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "screenshots"
 OUT.mkdir(exist_ok=True)
 W, H = 375, 812
-TABS = ["bin", "bulky", "give", "spot", "radar"]
+TABS = ["bin", "bulky", "give", "spot", "game", "radar"]  # the Block game sits under My spot
 LANGS = ["en", "nl"]
 failures, log = [], []
 
@@ -92,7 +92,7 @@ def main():
         # 1. Every tab, both languages, light + dark: screenshots + overflow + console
         for scheme, lang in [("light", "en"), ("light", "nl"), ("dark", "en"), ("dark", "nl")]:
             for tab in TABS:
-                extra = {"plek_spot": json.dumps("RET20507")} if tab == "spot" else None
+                extra = {"plek_spot": json.dumps("RET20507")} if tab in ("spot", "game") else None
                 ctx, page, errs = new_page(browser, lang, extra, color_scheme=scheme)
                 page.goto(base + "#" + tab)
                 settle(page)
@@ -102,7 +102,7 @@ def main():
                     check(page.evaluate("document.querySelectorAll('.lmap path.bin').length") == 1206, f"{scheme}/{lang}/bin: 1,206 containers on the map")
                 tag = lang if scheme == "light" else f"dark_{lang}"
                 cur = page.get_attribute("nav a[aria-current=page]", "href")
-                check(cur == "#" + tab, f"{tag}/{tab}: tab is active ({cur})")
+                check(cur == "#" + ("spot" if tab == "game" else tab), f"{tag}/{tab}: tab is active ({cur})")
                 check(page.evaluate("document.documentElement.lang") == lang, f"{tag}/{tab}: html lang={lang}")
                 o = page.evaluate(OVERFLOW_JS)
                 check(o["doc"] <= o["W"] and o["main"] <= o["mainClient"] and not o["offenders"],
@@ -122,7 +122,8 @@ def main():
         html = page.content()
         for bad in ["Containers are full less than", "minder dan 4% van de tijd", "image detection", "beeldherkenning",
                     "Pickup point (street)", "Ophaalpunt (straat)", "Unclaimed items are collected", "[local partner]", "[lokale partner]",
-                    "85% of days", "85% van de dagen", "Fix the playground", "Speeltuin opknappen"]:
+                    "85% of days", "85% van de dagen", "Fix the playground", "Speeltuin opknappen",
+                    "Spot Host", "Plekhost", "host this spot", "Where to recruit", "Waar eerst", "waiting for data export"]:
             check(bad not in html and (text is None or bad not in text), f"old copy gone: {bad!r}")
         for good in ["the container is full in fewer than 4% of cases", "is die container in minder dan 4% van de gevallen vol",
                      "Keep it inside until they pick it up, never next to the container", "Houd het binnen tot die het ophaalt", "crew logs and city inspections",
@@ -237,15 +238,27 @@ def main():
         check(not errs, f"unknown ?c: no console errors {errs}")
         ctx.close()
 
-        # 5b. Confirmations stay visible together (demo flow: report -> host -> set as my spot)
+        # 5b. Bin tab on the sticker container: route badge, not full, then join team -> rate -> report -> set as my spot
         ctx, page, errs = new_page(browser, "en")
         page.goto(base + "?c=RET20507")
         settle(page)
-        page.click("[data-report='r_bags']"); page.click("#host"); page.click("#setspot")
+        card = page.inner_text("#bincard")
+        check("On the city’s clean-up route: 4 days a week, for 4+ years (ABP list, Oct 2026)" in card, f"RET20507 route badge: {page.inner_text('#bincard .route')!r}")
+        check("RET20507 · D-buurt" in card and "No “full” reports" in card and "fewer than 4% of cases" in card and page.is_visible("#tapfull"),
+              "RET20507: neighbourhood name, no full reports, 4% fact, tap-to-report button")
+        check("Nobody looks after this spot yet" in page.inner_text("#teamcard") and "4–6 households" in page.inner_text("#teamcard"), "team card: no adopter, 4–6 households")
+        page.click("#join"); page.click("[data-rate='0']"); page.click("[data-report='r_bags']"); page.click("#setspot")
         body = page.inner_text("#view")
-        check("ready to send to the city" in body and "neighbourhood coordinator" in body and "Saved as your spot" in body
-              and page.query_selector("#host") is None, "report, host and spot confirmations all stay on screen")
-        check(not errs, f"confirmations: no console errors {errs}")
+        check("coordinator would contact you about the team" in body and "rated the spot clean (demo)" in body and "ready to send to the city" in body
+              and "Saved as your spot" in body and page.query_selector("#join") is None and page.get_attribute("[data-rate='0']", "aria-pressed") == "true",
+              "join, rating, report and spot confirmations all stay on screen")
+        page.click("#tapfull")
+        check("You reported it full" in page.inner_text("#bincard") and "priority pickup request" in page.inner_text("#bincard"), "tap 'full' shows your report and the confirmation")
+        page.evaluate("location.hash='#bin'")
+        page.fill("#q", "RET20385"); page.click("#findform button[type=submit]"); page.wait_for_timeout(300)
+        check(page.inner_text("#bincard .route") == "Not on the city’s clean-up route" and "One neighbour has adopted this spot" in page.inner_text("#teamcard"),
+              "RET20385: not on the route, adopted spot still asks for a team")
+        check(not errs, f"bin flow: no console errors {errs}")
         ctx.close()
 
         # 6. Demo helpers and polish
@@ -284,39 +297,65 @@ def main():
         check(page.evaluate("!!document.querySelector('link[rel=icon]')"), "favicon present")
         ctx.close()
 
-        # 7. My spot: Buurtbonus measured against the spot's own start, new vote options, counts labelled demo
-        BONUS = {
-            "en": ("Beat your own start: if your spot reaches its goal compared to its first 4 weeks, the block earns a reward you choose together, sponsored by local partners and the city.",
-                   "24 of 26 clean days · goal based on your own start",
-                   ["Mural near the spot with a local artist", "Plants on the container plate", "Pizza night or block BBQ"], "10 votes"),
-            "nl": ("Versla je eigen start: haalt jullie plek het doel ten opzichte van de eerste 4 weken, dan verdient het blok een beloning die jullie samen kiezen, gesponsord door lokale partners en de gemeente.",
-                   "24 van 26 schone dagen · doel op basis van jullie eigen start",
-                   ["Muurschildering bij de plek met een lokale kunstenaar", "Planten op de containerplaat", "Pizza-avond of blok-BBQ"], "10 stemmen"),
+        # 7. My spot + Block game, both languages
+        GAME = {
+            "en": dict(team="5 households from this block · 2 neighbours on the waiting list. Seasons last 12 weeks.",
+                       city="The city confirmed that a collective reward fits the rules when organised with local partners and the municipality.",
+                       opts=["Pizza night", "Block BBQ", "A bench at our spot"], m_team="Team of 4–6 households from the block (the planters arrive when it’s complete)",
+                       m_plant="Plant care rota this week: water the planters on the plate", handover="Thanks for your season", thanks="Thanks sent to the crew",
+                       chars=["The Rapid Crew", "The Estate Keeper", "The Mentor", "The Connector", "The Upcycler"], voted="Your vote is counted (demo)."),
+            "nl": dict(team="5 huishoudens uit dit blok · 2 buren op de wachtlijst. Een seizoen duurt 12 weken.",
+                       city="De gemeente bevestigde dat een gezamenlijke beloning binnen de regels past",
+                       opts=["Pizza-avond", "Blok-BBQ", "Een bankje bij onze plek"], m_team="Team van 4–6 huishoudens uit het blok",
+                       m_plant="Plantenrooster deze week: water geven aan de bakken op de plaat", handover="Bedankt voor je seizoen", thanks="Bedankje verstuurd",
+                       chars=["De Snelle Ploeg", "De Huismeester", "De Mentor", "De Verbinder", "De Hergebruiker"], voted="Je stem is geteld (demo)."),
         }
         for lang in LANGS:
-            text_, label, opts, after = BONUS[lang]
+            G = GAME[lang]
             ctx, page, errs = new_page(browser, lang, {"plek_spot": json.dumps("RET20507")})
             page.goto(base + "#spot")
             settle(page)
+            check(page.get_attribute("nav#tabs a[aria-current=page]", "href") == "#spot" and "24" in page.inner_text(".card h2 span"), f"{lang}/spot: 24/30 calendar")
+            page.click("#opengame"); page.wait_for_timeout(300)
+            check(page.evaluate("location.hash") == "#game" and page.get_attribute("nav#tabs a[aria-current=page]", "href") == "#spot", f"{lang}/game: opens under My spot")
+            kp = page.inner_text("#goalcard .kpis")
+            check(kp.split()[0] == "19" and "24" in kp and "26" in kp, f"{lang}/game: start 19, now 24 (same as calendar), goal 26")
             view = page.inner_text("#view")
-            check(text_ in view, f"{lang}/spot: new Buurtbonus text")
-            got = page.inner_text(".progress + p").strip()
-            check(got == label, f"{lang}/spot: progress label {got!r}")
-            check(page.get_attribute(".progress", "aria-valuenow") == "92" and "85%" not in view and "80%" not in view,
-                  f"{lang}/spot: bar at 24/26 = 92%, no 80%/85% left")
-            check(view.count(" / 30") == 1 and "24" in page.inner_text(".card h2 span"), f"{lang}/spot: same 24 clean days as the calendar")
-            names = [page.inner_text(f"[data-vote='{i}'] span:first-child") for i in range(3)]
-            counts_one_line = page.evaluate("[...document.querySelectorAll('[data-vote] span:last-child')].every(e=>e.getClientRects().length===1)")
-            check(counts_one_line, f"{lang}/spot: vote counts stay on one line")
-            check(names == opts, f"{lang}/spot: vote options {names}")
-            check(page.locator("section.card:has([data-vote]) .pill.demo").count() == 1, f"{lang}/spot: vote counts labelled Demo")
-            page.click("[data-vote='1']")
-            check(after in page.inner_text("[data-vote='1']") and page.get_attribute("[data-vote='1']", "aria-pressed") == "true"
-                  and page.is_visible("#view .toast"), f"{lang}/spot: voting adds one ({after}) and confirms")
+            check(G["team"] in view and G["city"] in view and G["m_team"] in view and G["m_plant"] in view and all(c in view for c in G["chars"]),
+                  f"{lang}/game: team card, city line, missions, five partner characters")
+            check("[local" not in view and "[lokale" not in view, f"{lang}/game: no placeholder sponsor")
+            opts = [page.inner_text(f"[data-pvote='{i}']").strip() for i in range(3)]
+            check(all(o in view for o in G["opts"]) and opts[1].endswith("6"), f"{lang}/game: prize options {G['opts']} with demo counts {opts}")
+            page.click("[data-pvote='1']")
+            check(page.inner_text("[data-pvote='1']").strip().endswith("7") and G["voted"] in page.inner_text("#prizecard"), f"{lang}/game: vote adds one and confirms")
+            page.click("#handover"); page.click("#thanks")
+            view = page.inner_text("#view")
+            check(G["handover"] in view and G["thanks"] in view and G["voted"] in view, f"{lang}/game: hand-over, thanks and vote confirmations stay on screen")
             o = page.evaluate(OVERFLOW_JS)
-            check(o["doc"] <= o["W"] and not o["offenders"], f"{lang}/spot after voting: no horizontal overflow {o['offenders'][:3]}")
-            shoot(page, f"{lang}_spot_bonus_voted", full=True)
-            check(not errs, f"{lang}/spot: no console errors {errs}")
+            check(o["doc"] <= o["W"] and not o["offenders"], f"{lang}/game after taps: no horizontal overflow {o['offenders'][:3]}")
+            shoot(page, f"{lang}_game_tapped", full=True)
+            check(not errs, f"{lang}/game: no console errors {errs}")
+            ctx.close()
+
+        # 8. City tab: ABP figures, route map, pilot table, field visit, data note
+        NOTE = {"en": "Sources: City of Amsterdam container open data and neighbourhood boundaries (7 Nov 2026); ABP route list (October 2026). Fill reports, ratings, votes and game values are demo.",
+                "nl": "Bronnen: open data van de gemeente Amsterdam over containers en buurtgrenzen (7 nov 2026); ABP-routelijst (oktober 2026)."}
+        for lang in LANGS:
+            ctx, page, errs = new_page(browser, lang)
+            page.goto(base + "#radar")
+            settle(page)
+            big = page.evaluate("[...document.querySelectorAll('#abpcard .kpi b')].map(e=>e.textContent)")
+            check(big == ["45%", "54%", "81%"], f"{lang}/city: ABP figures {big}")
+            kp = page.inner_text(".kpis")
+            check(("34,5%" if lang == "nl" else "34.5%") in kp and ("42,4%" if lang == "nl" else "42.4%") in kp, f"{lang}/city: adoption 34.5% vs 42.4% kept")
+            legend = page.inner_text("#abpcard .legend")
+            check("597" in legend and "609" in legend, f"{lang}/city: route map legend {legend!r}")
+            check(page.locator("#pilotcard tbody tr").count() == 10 and "Darlingstraat 277" in page.inner_text("#pilotcard tbody tr:first-child"),
+                  f"{lang}/city: 10 pilot spots, Darlingstraat 277 first")
+            view = page.inner_text("#view")
+            check(NOTE[lang] in view and "RET20507" in page.inner_text("#visitcard") and "45%" in page.inner_text("#abpcard") and "46%" in page.inner_text("#abpcard"),
+                  f"{lang}/city: data note, field visit, adopter 45% vs 46%")
+            check(not errs, f"{lang}/city: no console errors {errs}")
             ctx.close()
 
         browser.close()
