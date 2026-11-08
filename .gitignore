@@ -1,3 +1,4 @@
 screenshots/
 .DS_Store
 __pycache__/
+demo/_contact_*.png
